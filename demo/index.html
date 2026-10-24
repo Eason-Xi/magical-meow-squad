@@ -125,6 +125,10 @@
   /* 选关 */
   .select { width: min(940px, 100%); display: flex; flex-direction: column; gap: clamp(8px, 2.4vh, 16px); }
   .select header { display: flex; align-items: baseline; justify-content: center; gap: 12px; }
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .tab { font: inherit; font-size: clamp(15px, 4vh, 20px); color: var(--plum-soft); background: #fff; border: 3px solid #ffd3e2; border-radius: 999px; padding: 4px 16px; min-height: 40px; cursor: pointer; }
+  .tab.on { color: #fff; background: linear-gradient(#ff9ec0, #ff6f9c); border-color: #fff; box-shadow: 0 3px 0 var(--pink-deep); }
+  .tab:focus-visible { outline: 3px solid var(--lav); outline-offset: 3px; }
   .cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: clamp(6px, 1.4vw, 14px); }
   .card {
     font: inherit; color: var(--plum); cursor: pointer;
@@ -135,7 +139,7 @@
     transition: transform 0.1s;
   }
   .card:active { transform: translateY(3px); }
-  .card .num { font-size: clamp(26px, 8vh, 42px); line-height: 1; color: var(--pink); }
+  .card .num { font-size: clamp(24px, 7vh, 38px); line-height: 1; color: var(--pink); font-variant-numeric: tabular-nums; }
   .card .name { font-size: clamp(15px, 4vh, 20px); }
   .card .tag { font-size: 13px; background: #e1f7f0; color: var(--mint-deep); border-radius: 999px; padding: 2px 10px; }
   .card .stars { font-size: 20px; letter-spacing: 2px; color: #e7d9e0; font-family: system-ui, sans-serif; }
@@ -174,6 +178,10 @@
   @keyframes turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
 
   @media (max-height: 420px) {
+    .select { gap: 6px; }
+    .card { padding: 5px 6px; gap: 1px; }
+    .card .num { font-size: 22px; }
+    .card .stars { font-size: 16px; }
     .result-body { gap: 12px; }
     .stats dt { font-size: 11px; }
   }
@@ -199,7 +207,7 @@
         <button id="btnStart" class="btn">开始冒险</button>
         <button id="btnSelect" class="btn mint">选关</button>
       </div>
-      <p class="fine">MVP 试玩版 · 第 1 章「糖果森林」全 5 关 · 点屏幕或按空格跳跃</p>
+      <p class="fine">试玩版 · 糖果森林 10 关 + 月光游乐园 5 关 · 点屏幕或按空格跳跃</p>
     </div>
     <div class="title-art">
       <img id="artGirl" src="assets/sprites/win.png" alt="">
@@ -210,7 +218,12 @@
 
   <section id="scrSelect" class="screen dim" hidden>
     <div class="panel select">
-      <header><h2>糖果森林</h2><p class="eyebrow">第 1 章 · 选关</p></header>
+      <header>
+        <div class="tabs" role="tablist">
+          <button id="tabCh1" class="tab" role="tab">第 1 章 · 糖果森林</button>
+          <button id="tabCh2" class="tab" role="tab">第 2 章 · 月光游乐园</button>
+        </div>
+      </header>
       <div id="levelCards" class="cards"></div>
       <footer>
         <button id="btnBack" class="btn ghost">返回</button>
@@ -277,6 +290,7 @@
 <script>
 (() => {
   'use strict';
+  const SCRIPT_TEXT = (document.currentScript && document.currentScript.textContent) || '';
 
   // ===== 手感参数（PRD 4.2，均可调） =====
   const CFG = {
@@ -291,8 +305,34 @@
   const VH = 540;
   const GY = 440;
   const COMBO_BONUS = { 3: [100, 5], 5: [300, 10], 10: [700, 20] };
-  const ENEMY_SIZE = { jelly: [44, 36], pudding: [46, 40] };
+  const ENEMY_SIZE = { jelly: [44, 36], pudding: [46, 40], fly: [44, 34], hopper: [40, 48] };
+  const CRUMBLE_FALL = 0.5, CRUMBLE_BACK = 3.5; // 饼干平台：踩上 0.5 秒后坠落，3.5 秒后复原
+  const BUB_RISE = 150, BUB_TIME = 1.8, BUB_CD = 3.5; // 反重力泡泡：上升速度、最长持续、被用掉后多久复原
+  const TAU = Math.PI * 2;
+  // 移动平台在时刻 t 的位置（只由时间决定，求解器可复现）
+  const platAt = (pl, t) => (pl.mv ? { x: pl.x + pl.dx * Math.sin(t * pl.w0 + pl.ph), y: pl.y + pl.dy * Math.sin(t * pl.w0 + pl.ph), w: pl.w } : pl);
   const CAT_DUR = { go: 0.7, tunnel: 0.6, press: 0.45, bridge: 0.7, back: 0.6 };
+  // 猫咪技能：从第 from 关（下标）起解锁，之后的关卡一直可用；全部自动触发，不增加操作
+  // 随第 2 章 2-1～2-3 关逐个解锁，解锁关开场有横幅介绍，HUD 左上角显示当前是否可用
+  const CAT_SKILLS = [
+    { id: 'shield', from: 10, name: '连击护盾', short: '护盾', desc: '连击到 5 时套上泡泡护盾，能挡一次伤害' },
+    { id: 'rescue', from: 11, name: '坑边救援', short: '救援', desc: '每关第一次掉坑，猫咪把你拎回来（扣 1 颗心）' },
+    { id: 'magnet', from: 12, name: '星星磁吸', short: '磁吸', desc: '连击期间，附近的星星会被吸过来' },
+  ];
+  const MAGNET_R = 60;
+  // 章节主题：远景、中景、地块配色
+  const THEMES = {
+    candy: {
+      bg: 'bg', sky: ['#cdbaf3', '#ffe6ef'], hill: '#fbe3d0', stick: 'rgba(255,255,255,0.75)', swirl: 'rgba(255,255,255,0.85)',
+      lolly: ['#ffc6d9', '#c9ecff', '#d9c8ff', '#ffe3a8'], haze: ['rgba(255,245,250,0)', 'rgba(255,240,246,0.55)'],
+      ground: { top: '#e3a564', bottom: '#b06d36', line: '#6e3c1d', dots: 'rgba(110, 60, 29, 0.32)', icing: '#fff6ec', icingLine: '#e2bf9f' },
+    },
+    moon: {
+      bg: 'bg2', sky: ['#2b2a6b', '#8a6fc0'], hill: '#5a4b93', stick: 'rgba(255,240,200,0.55)', swirl: 'rgba(255,255,255,0.6)',
+      lolly: ['#ff9ec0', '#7ec8ff', '#c7b3ff', '#ffd77a'], haze: ['rgba(60,40,110,0)', 'rgba(70,50,120,0.45)'], twinkle: true,
+      ground: { top: '#a99be0', bottom: '#6a58ad', line: '#2f2560', dots: 'rgba(47, 37, 96, 0.35)', icing: '#eaf3ff', icingLine: '#a9bde8' },
+    },
+  };
   const CAT_NEXT = { go: 'tunnel', tunnel: 'press', press: 'bridge', bridge: 'back', back: 'done' };
   const FONT = '"ZCOOL KuaiLe", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif';
 
@@ -383,17 +423,193 @@
         [1700, 2330, '踩倒头顶有★的怪物，解开封印！'], [2450, 2690, '一路连踩 8 只，冲击三星！'],
         [4300, 4540, '又到猫咪出场了～'], [5300, 5700, '布丁王就在前面…准备好了吗？']],
     },
+    {
+      // 高处星星只有完美弹跳（或弹起后再二段跳）才够得着
+      code: '1-6', name: '弹跳特训', tag: '完美弹跳', goals: [['perfect', 3], ['combo', 5]], finish: 5400,
+      solids: [[0, 1300, 440], [1420, 2600, 440], [2830, 6000, 440]],
+      plats: [],
+      springs: [],
+      enemies: [['jelly', 520], ['jelly', 1100], ['pudding', 1700, 440, [1620, 1780]], ['jelly', 2100],
+        ['jelly', 3100], ['jelly', 3266], ['jelly', 3432], ['jelly', 3598], ['jelly', 3764], ['jelly', 4300], ['jelly', 4900]],
+      stars: [[600, 200], [630, 200], [1180, 200], [1210, 200], [2180, 200], [2210, 200], [4380, 200], [4410, 200],
+        ...arc(1290, 140, 3, 410, 75), ...arc(2590, 250, 4, 410, 150), ...line(2900, 410, 3, 46),
+        [3183, 247], [3349, 247], [3515, 247], ...line(5000, 410, 4, 46)],
+      hints: [[0, 480, '踩怪的瞬间再点一下＝完美弹跳'], [600, 1080, '完美弹跳弹得更高，够得着高处的星星'], [1150, 1300, '小坑：跳过去'],
+        [2380, 2600, '大坑：二段跳'], [2880, 3080, '一次起跳，连踩 5 只！'], [4100, 4290, '再来一次完美弹跳！']],
+    },
+    {
+      // 新怪物：棉花糖飞飞怪（上下飘动）；用它们当跳板飞过大坑
+      code: '1-7', name: '棉花糖飞飞', tag: '飞行怪', goals: [['combo', 6], ['stars', 14]], finish: 5600,
+      solids: [[0, 1100, 440], [1220, 2000, 440], [2550, 4300, 440], [4420, 6200, 440]],
+      plats: [],
+      springs: [],
+      enemies: [['fly', 650, 380, null, { amp: 12 }], ['fly', 860, 340, null, { amp: 40, period: 2, skin: 'fly2' }],
+        ['jelly', 1500], ['fly', 1760, 360, null, { amp: 30, skin: 'fly2' }],
+        ['fly', 2110, 380, null, { amp: 8 }], ['fly', 2276, 380, null, { amp: 8 }], ['fly', 2442, 380, null, { amp: 8 }],
+        ['jelly', 3000], ['jelly', 3166], ['fly', 3332, 404, null, { amp: 6, skin: 'fly2' }], ['fly', 3498, 404, null, { amp: 6 }],
+        ['fly', 3664, 404, null, { amp: 6, skin: 'fly2' }], ['fly', 3830, 404, null, { amp: 6 }],
+        ['pudding', 4120, 440, [4040, 4200]], ['fly', 4700, 380, null, { amp: 10 }], ['fly', 4866, 380, null, { amp: 10, skin: 'fly2' }],
+        ['fly', 5032, 380, null, { amp: 10 }], ['jelly', 5300]],
+      stars: [...line(300, 410, 3, 46), ...arc(1090, 140, 3, 410, 75), [2193, 226], [2359, 226], [2525, 226],
+        ...line(2650, 410, 4, 46), [3083, 247], [3249, 247], [3415, 247], [3581, 247], [3747, 247],
+        ...arc(4290, 140, 3, 410, 75), [4783, 226], [4949, 226], ...line(5350, 410, 3, 46)],
+      hints: [[0, 560, '新朋友：会上下飘的棉花糖飞飞怪'], [1820, 2000, '踩着飞飞怪跳过大坑！'], [2780, 2990, '地上空中一路连踩 6 只！'],
+        [4180, 4300, '小坑：跳过去']],
+    },
+    {
+      // 新机关：酥脆饼干平台，踩上 0.5 秒后碎掉（3.5 秒后复原，不会卡关）
+      code: '1-8', name: '酥脆饼干桥', tag: '崩塌平台', goals: [['noHurt'], ['stars', 15]], finish: 5600,
+      solids: [[0, 1000, 440], [1500, 2300, 440], [2900, 3600, 440], [4300, 6200, 440]],
+      plats: [[1000, 110, 440, 'c'], [1190, 110, 440, 'c'], [1380, 120, 440, 'c'],
+        [2340, 100, 400, 'c'], [2500, 100, 350, 'c'], [2660, 100, 400, 'c'],
+        [3640, 100, 420, 'c'], [3990, 100, 400, 'c'], [4150, 100, 420, 'c'],
+        [4600, 100, 380, 'c'], [4760, 100, 320, 'c']],
+      springs: [],
+      enemies: [['jelly', 600], ['fly', 1750, 370, null, { amp: 20 }], ['jelly', 2000], ['jelly', 3200], ['jelly', 3366],
+        ['fly', 3830, 370, null, { amp: 10, skin: 'fly2' }], ['jelly', 5000], ['jelly', 5166]],
+      stars: [...line(1030, 410, 2, 40), ...line(1220, 410, 2, 40), ...line(1410, 410, 2, 40),
+        [2390, 360], [2550, 310], [2710, 360], [3690, 380], [4040, 360], [4200, 380],
+        [4650, 340], [4810, 280], [4850, 280], ...line(5300, 410, 3, 46)],
+      hints: [[650, 1000, '饼干平台踩上去就会碎，一路别停！'], [2100, 2300, '饼干台阶：一级一级跳过去'], [3350, 3600, '踩飞飞怪借力过坑']],
+    },
+    {
+      // 黄昏综合复习：真假门 + 8 连踩 + 饼干平台 + 封印 + 猫咪搭桥
+      code: '1-9', name: '黄昏大冒险', tag: '综合复习', goals: [['doorFirst'], ['combo', 8]], finish: 6700,
+      tint: 'rgba(255, 150, 90, 0.16)',
+      solids: [[0, 900, 440], [1010, 4100, 440], [4560, 5700, 440], [6020, 7200, 440]],
+      plats: [[1860, 216, 360], [4140, 110, 440, 'c'], [4330, 110, 420, 'c']],
+      springs: [],
+      slow: [[1550, 2100, 0.55]],
+      doors: [{ x: 2100, signX: 1640, up: 'heart', down: 'moon', correct: 'down', respawnX: 1450 }],
+      seals: [[5200, 150]],
+      enemies: [['jelly', 500], ['fly', 750, 380, null, { amp: 15 }],
+        ['jelly', 2600], ['jelly', 2766], ['jelly', 2932], ['fly', 3098, 404, null, { amp: 6 }], ['fly', 3264, 404, null, { amp: 6, skin: 'fly2' }],
+        ['fly', 3430, 404, null, { amp: 6 }], ['fly', 3596, 404, null, { amp: 6, skin: 'fly2' }], ['fly', 3762, 404, null, { amp: 6 }],
+        ['jelly', 5000, 440, [4850, 5170], { seal: 0, speed: 55 }], ['jelly', 6300], ['jelly', 6466]],
+      cat: { stopX: 5640, ventX: 5672, btnX: 6065, bridge: [5700, 320, 440] },
+      stars: [...arc(890, 140, 3, 410, 75), ...line(2250, 410, 4, 46), [2683, 247], [2849, 247], [3015, 247], [3181, 247],
+        [3347, 247], [3513, 247], ...line(4170, 410, 2, 40), ...line(4360, 390, 2, 40), ...line(5760, 410, 5, 55)],
+      hints: [[0, 480, '黄昏了！第 1 章的本领都会用到'], [1400, 1640, '看路牌，选对门'], [2380, 2590, '连踩 8 只冲三星！'],
+        [3950, 4100, '饼干平台，别停！'], [4700, 5200, '踩倒★怪解开封印'], [5400, 5640, '猫咪来帮忙～']],
+    },
+    {
+      // 章末首领：可可熊大王会原地砸地推出冲击波（只能跳过），再冲过来（踩它）
+      code: '1-10', name: '可可熊大王', tag: '章末首领', goals: [['noHurt'], ['combo', 6]], finish: null,
+      tint: 'rgba(110, 70, 160, 0.2)',
+      solids: [[0, 1000, 440], [1120, 2300, 440], [2700, 5200, 440]],
+      plats: [[2340, 110, 440, 'c']],
+      springs: [],
+      enemies: [['jelly', 600], ['fly', 800, 380, null, { amp: 20 }],
+        ['jelly', 1400], ['jelly', 1566], ['jelly', 1732], ['fly', 1898, 404, null, { amp: 6, skin: 'fly2' }],
+        ['fly', 2064, 404, null, { amp: 6 }], ['jelly', 2230], ['fly', 2540, 380, null, { amp: 10, skin: 'fly2' }], ['jelly', 3000]],
+      boss: { kind: 'bear', name: '可可熊大王', stopX: 3600, homeOff: 430, speeds: [75, 88, 100], slams: [1, 2, 2], minions: [0, 0, 1], w: 88, h: 62 },
+      stars: [...line(250, 410, 3, 46), ...arc(990, 140, 3, 410, 75), [1483, 247], [1649, 247], [1815, 247], [1981, 247],
+        [2147, 247], [2623, 226], ...line(3150, 410, 4, 46)],
+      hints: [[0, 560, '第 1 章最终战：可可熊大王！'], [1200, 1390, '一次起跳，连踩 6 只'], [2150, 2300, '饼干平台 + 飞飞怪，一口气冲过去'],
+        [3200, 3600, '可可熊大王就在前面！']],
+    },
+    // ===== 第 2 章：月光游乐园（移动平台、反重力泡泡、机关顺序；猫咪逐关学会新本领） =====
+    {
+      code: '2-1', name: '旋转木马站', tag: '移动平台', theme: 'moon', goals: [['combo', 5], ['stars', 14]], finish: 5800,
+      solids: [[0, 900, 440], [1500, 2400, 440], [2900, 3700, 440], [4400, 6400, 440]],
+      plats: [[1010, 110, 420, 'm', { dx: 70, period: 2.6 }], [1260, 110, 410, 'm', { dx: 70, period: 2.6, phase: Math.PI }],
+        [2470, 110, 400, 'm', { dy: 50, period: 2.4 }], [2660, 110, 380, 'm', { dy: -50, period: 2.4 }],
+        [3780, 120, 410, 'm', { dx: 90, period: 3 }], [4230, 110, 420, 'm', { dy: 40, period: 2 }]],
+      springs: [],
+      enemies: [['hopper', 600, 440, null, { hop: 60 }], ['jelly', 1800], ['hopper', 2100, 440, null, { hop: 70, phase: 1 }],
+        ['jelly', 3100], ['hopper', 3350, 440, null, { hop: 50 }], ['fly', 4050, 380, null, { amp: 10, skin: 'fly2' }],
+        ['jelly', 4700], ['jelly', 4866], ['jelly', 5032], ['jelly', 5198], ['jelly', 5364], ['hopper', 5620, 440, null, { hop: 60, phase: 2 }]],
+      stars: [...line(250, 410, 3, 46), [1065, 360], [1315, 350], ...line(1650, 410, 3, 46), [2525, 340], [2715, 320],
+        ...line(3000, 410, 3, 46), [3840, 350], [4050, 300], [4285, 360], [4783, 247], [4949, 247], [5115, 247], [5281, 247],
+        ...line(5450, 410, 3, 46)],
+      hints: [[0, 280, '第 2 章：月光游乐园！'], [280, 580, '跳跳小丑会弹起来，看准再踩'], [700, 900, '旋转木马踏板会动，看准再跳'],
+        [2200, 2400, '上下移动的踏板'], [3550, 3700, '踏板接飞飞怪，一口气过去'], [4480, 4690, '连踩 5 只，猫咪送你泡泡护盾！']],
+    },
+    {
+      code: '2-2', name: '泡泡天空', tag: '反重力泡泡', theme: 'moon', goals: [['noHurt'], ['stars', 15]], finish: 6000,
+      solids: [[0, 1000, 440], [1000, 1400, 240], [1400, 2300, 440], [3100, 3500, 440], [3500, 3900, 220], [3900, 4600, 440], [5000, 6600, 440]],
+      plats: [],
+      springs: [],
+      bubbles: [[650, 395], [965, 395], [2330, 395], [2830, 330], [3150, 395], [3465, 395], [4620, 395]],
+      enemies: [['hopper', 1250, 240, null, { hop: 50 }], ['jelly', 1700], ['jelly', 1866], ['fly', 2050, 380, null, { amp: 12 }],
+        ['hopper', 4250, 440, null, { hop: 60 }], ['jelly', 5300], ['jelly', 5466], ['hopper', 5700, 440, null, { hop: 55, phase: 1 }]],
+      stars: [[782, 321], [870, 261], [958, 201], ...line(1100, 211, 4, 60), [2440, 336], [2550, 261], [2660, 186],
+        [2940, 255], [3050, 180], [3260, 336], [3370, 261], ...line(3600, 191, 4, 60), [4730, 336], [4840, 261], [4950, 186],
+        ...line(5100, 410, 3, 46)],
+      hints: [[0, 640, '碰到泡泡会被包起来往上飘'], [640, 990, '飘够高了点一下，戳破泡泡顺势起跳'], [2100, 2300, '大坑：泡泡接力！'],
+        [3200, 3460, '高塔：让泡泡带你上去'], [4400, 4600, '掉坑了也别怕，猫咪会救你一次']],
+    },
+    {
+      code: '2-3', name: '月光印记', tag: '机关顺序', theme: 'moon', goals: [['seqFirst'], ['combo', 6]], finish: 5800,
+      solids: [[0, 1000, 440], [1110, 6600, 440]],
+      plats: [],
+      springs: [],
+      slow: [[1300, 2150, 0.6], [3500, 4500, 0.8]],
+      seqs: [
+        { marks: [[1500, 410], [1700, 320], [1900, 410]], gateX: 2150, respawnX: 1250 },
+        { marks: [[3700, 410], [3850, 410, 1], [3860, 300], [4050, 330], [4250, 410, 1]], gateX: 4500, respawnX: 3450 },
+      ],
+      enemies: [['hopper', 600, 440, null, { hop: 55 }], ['jelly', 2400], ['jelly', 2566], ['jelly', 2732], ['jelly', 2898],
+        ['fly', 3064, 404, null, { amp: 6, skin: 'fly2' }], ['fly', 3230, 404, null, { amp: 6 }],
+        ['hopper', 4800, 440, null, { hop: 60 }], ['jelly', 5100], ['jelly', 5266]],
+      stars: [...arc(990, 140, 3, 410, 75), ...line(2300, 410, 2, 46), [2483, 247], [2649, 247], [2815, 247], [2981, 247], [3147, 247],
+        [2520, 330], [2690, 330], [2860, 330], [3030, 330], ...line(4650, 410, 3, 46), ...line(5400, 410, 3, 46)],
+      hints: [[0, 600, '碰亮印记，大门才会打开'], [1150, 1500, '依次碰亮 1、2、3 号印记'], [2200, 2390, '连踩 6 只，猫咪会帮你吸星星'],
+        [3300, 3700, '小心灰色乌云印记，碰到要重来']],
+    },
+    {
+      code: '2-4', name: '过山车冒险', tag: '综合复习', theme: 'moon', goals: [['noHurt'], ['combo', 8]], finish: 6200,
+      solids: [[0, 1000, 440], [1600, 3100, 440], [3100, 3500, 230], [3500, 4200, 440], [4800, 6800, 440]],
+      plats: [[1080, 110, 420, 'm', { dx: 60, period: 2.4 }], [1320, 110, 400, 'm', { dy: 50, period: 2 }], [1480, 100, 430, 'c']],
+      springs: [],
+      bubbles: [[3065, 395], [4215, 395], [4715, 330]],
+      seqs: [{ marks: [[3750, 410], [3900, 320], [4050, 410, 1]], gateX: 4150, respawnX: 3600 }],
+      enemies: [['hopper', 600, 440, null, { hop: 60 }], ['jelly', 1750], ['jelly', 1916], ['jelly', 2082],
+        ['fly', 2248, 404, null, { amp: 6, skin: 'fly2' }], ['fly', 2414, 404, null, { amp: 6 }], ['jelly', 2580], ['jelly', 2746], ['jelly', 2912],
+        ['hopper', 5100, 440, null, { hop: 60 }], ['fly', 5350, 380, null, { amp: 20 }], ['hopper', 5600, 440, null, { hop: 50, phase: 1.5 }]],
+      stars: [[1135, 360], [1375, 340], [1530, 395], [1833, 247], [1999, 247], [2165, 247], [2331, 247], [2497, 247], [2663, 247], [2829, 247],
+        ...line(3200, 201, 4, 60), [4325, 336], [4435, 261], [4825, 255], [4935, 180], ...line(5800, 410, 3, 46)],
+      hints: [[0, 560, '过山车冒险：第 2 章本领全用上'], [800, 1000, '移动踏板 + 饼干平台'], [1550, 1740, '连踩 8 只冲三星！'],
+        [3550, 3740, '依次碰亮印记，避开乌云'], [4170, 4210, '泡泡接力过大坑']],
+    },
+    {
+      code: '2-5', name: '月光魔术秀', tag: '小首领', theme: 'moon', goals: [['combo', 6], ['energy', 100]], finish: null,
+      solids: [[0, 1100, 440], [1600, 5400, 440]],
+      plats: [[1180, 110, 420, 'm', { dx: 60, period: 2.4 }], [1400, 110, 400, 'm', { dx: 60, period: 2.4, phase: Math.PI }]],
+      springs: [],
+      enemies: [['hopper', 650, 440, null, { hop: 55 }], ['jelly', 1900], ['jelly', 2066], ['jelly', 2232],
+        ['fly', 2398, 404, null, { amp: 6, skin: 'fly2' }], ['fly', 2564, 404, null, { amp: 6 }], ['jelly', 2730],
+        ['hopper', 3000, 440, null, { hop: 50 }], ['hopper', 3250, 440, null, { hop: 50, phase: 1.5 }]],
+      boss: { kind: 'rabbit', name: '月光魔术兔', stopX: 3700, homeOff: 430, speeds: [80, 92, 104], slams: [1, 1, 2], minions: [0, 1, 1], minion: 'fly', w: 84, h: 62 },
+      stars: [...line(250, 410, 3, 46), [1235, 360], [1455, 340], [1983, 247], [2149, 247], [2315, 247], [2481, 247], [2647, 247],
+        ...line(3400, 410, 4, 46)],
+      hints: [[0, 600, '第 2 章阶段关：月光魔术秀！'], [1700, 1890, '一次起跳，连踩 6 只'], [3300, 3700, '月光魔术兔登场…']],
+    },
   ];
   const DOOR_LEDGE = 360;
 
   function buildLevel(d, i) {
     const L = { ...d, idx: i };
-    L.solids = d.solids.map(([x0, x1, y], k) => ({ x: x0, y, w: x1 - x0, h: VH + 80 - y, seed: k * 17 + i * 101 }));
-    L.plats = d.plats.map(([x, w, y]) => ({ x, y, w }));
+    L.theme = d.theme || 'candy';
+    L.solids = d.solids.map(([x0, x1, y], k) => ({ x: x0, y, w: x1 - x0, h: VH + 80 - y, seed: k * 17 + i * 101, pal: THEMES[L.theme].ground }));
+    L.plats = d.plats.map(([x, w, y, kind, o = {}]) => ({
+      x, y, w, crumble: kind === 'c', mv: kind === 'm', dx: o.dx || 0, dy: o.dy || 0, w0: TAU / (o.period || 3), ph: o.phase || 0,
+    }));
+    L.bubbles = (d.bubbles || []).map(([x, y]) => ({ x, y, r: 34 }));
+    // 印记机关：依次碰亮真印记开门；碰到假印记、或漏掉印记跑到门前，都回到 respawnX 重来
+    L.seqs = (d.seqs || []).map((q) => ({
+      marks: q.marks.map(([x, y, fake]) => ({ x, y, fake: !!fake })),
+      gate: { x: q.gateX, y: q.gateY ?? 150, w: 28, h: VH + 80 - (q.gateY ?? 150) },
+      respawnX: q.respawnX,
+    }));
     L.springs = d.springs.map(([cx, sy]) => ({ x: cx - 22, y: sy - 16, w: 44, h: 16 }));
     L.enemies = d.enemies.map(([type, cx, sy = GY, patrol, opt = {}]) => {
       const [w, h] = ENEMY_SIZE[type];
-      const e = { type, x: cx - w / 2, y: sy - h, w, h, vx: 0, x0: 0, x1: 0, patrol: false, seal: opt.seal ?? -1, minion: false };
+      const e = { type, x: cx - w / 2, y: sy - h, w, h, vx: 0, x0: 0, x1: 0, patrol: false, seal: opt.seal ?? -1, minion: false, skin: opt.skin || type };
+      // 飞飞怪：sy 表示顶面高度，按正弦上下飘动
+      if (type === 'fly') Object.assign(e, { y: sy, y0: sy, amp: opt.amp ?? 10, w0: (Math.PI * 2) / (opt.period || 2.4), ph: opt.phase || 0 });
+      // 跳跳小丑：原地周期性弹起，sy 仍是站立面
+      if (type === 'hopper') Object.assign(e, { y0: e.y, hop: opt.hop ?? 70, w0: TAU / (opt.period || 1.6), ph: opt.phase || 0 });
       if (patrol) { e.patrol = true; e.vx = -(opt.speed || 35); e.x0 = patrol[0] - w / 2; e.x1 = patrol[1] - w / 2; }
       return e;
     });
@@ -401,7 +617,7 @@
     L.slow = d.slow || [];
     L.doors = d.doors || [];
     L.seals = (d.seals || []).map(([x, y]) => ({ x, y, w: 28, h: VH + 80 - y }));
-    L.boss = d.boss ? { ...d.boss, home: d.boss.stopX + d.boss.homeOff } : null;
+    L.boss = d.boss ? { kind: 'king', name: '捣蛋布丁王', w: 80, h: 62, slams: [0, 0, 0], ...d.boss, home: d.boss.stopX + d.boss.homeOff } : null;
     if (d.cat) {
       const [bx, bw, by] = d.cat.bridge;
       L.cat = { ...d.cat, bridge: { x: bx, w: bw, y: by } };
@@ -423,14 +639,22 @@
       cat: { phase: L.cat ? 'idle' : 'none', t: 0 },
       doorDone: new Uint8Array(L.doors.length), doorFailsBy: new Uint8Array(L.doors.length), doorFails: 0,
       seals: new Uint8Array(L.seals.length),
-      boss: L.boss ? { state: 'idle', t: 0, hp: 3, phase: 1, x: L.boss.home - 40, y: GY - 62, w: 80, h: 62, spawnLeft: 0 } : null,
+      boss: L.boss ? { state: 'idle', t: 0, hp: 3, phase: 1, x: L.boss.home - L.boss.w / 2, y: GY - L.boss.h, w: L.boss.w, h: L.boss.h, spawnLeft: 0, slamsLeft: 0 } : null,
+      crumble: new Float64Array(L.plats.length),
+      ride: -1, bub: -1, bubT: 0, bubCD: new Float64Array(L.bubbles.length),
+      seqLit: new Uint8Array(L.seqs.length), seqDone: new Uint8Array(L.seqs.length), seqFails: 0,
+      waves: [],
+      sk: Object.fromEntries(CAT_SKILLS.map((k) => [k.id, L.idx >= k.from])),
+      shield: false, rescued: false, safeB: 0, safeX: 60,
       easy: !!easy, dead: false, cause: '', finished: false, ev: [],
     };
   }
   function cloneRun(s) {
     return {
       ...s, p: { ...s.p }, en: s.en.map((e) => ({ ...e })), got: s.got.slice(), springT: s.springT.slice(), cat: { ...s.cat },
-      doorDone: s.doorDone.slice(), doorFailsBy: s.doorFailsBy.slice(), seals: s.seals.slice(), boss: s.boss ? { ...s.boss } : null, ev: null,
+      doorDone: s.doorDone.slice(), doorFailsBy: s.doorFailsBy.slice(), seals: s.seals.slice(), boss: s.boss ? { ...s.boss } : null,
+      crumble: s.crumble.slice(), waves: s.waves.map((w) => ({ ...w })), ev: null,
+      bubCD: s.bubCD.slice(), seqLit: s.seqLit.slice(), seqDone: s.seqDone.slice(),
     };
   }
 
@@ -447,6 +671,7 @@
     s.combo = s.comboT > 0 ? s.combo + 1 : 1;
     s.comboT = CFG.comboWindow;
     s.maxCombo = Math.max(s.maxCombo, s.combo);
+    if (s.sk.shield && s.combo === 5 && !s.shield) { s.shield = true; emit(s, 'shield'); }
     s.stomps++;
     let sc = base, en = energy;
     const bonus = COMBO_BONUS[s.combo];
@@ -458,6 +683,12 @@
   }
   function hurtPlayer(s, cause) {
     const p = s.p;
+    // 泡泡护盾抵消一次伤害：不扣心、不算受击、不断连击
+    if (s.shield) {
+      s.shield = false; p.inv = CFG.invuln;
+      emit(s, 'shieldBreak', { x: p.x + p.w / 2, y: p.y + p.h / 2 });
+      return;
+    }
     p.hp--; p.inv = CFG.invuln; s.hurts++;
     if (s.combo > 1) emit(s, 'comboEnd', { combo: s.combo });
     s.combo = 0; s.comboT = 0;
@@ -465,40 +696,70 @@
     if (p.hp <= 0) { s.dead = true; s.cause = cause; }
   }
 
-  // 布丁王：出场 → 放小怪 → 走向主角 →（被踩）击退、生气、进入下一阶段；走过头就跳回原位重来
+  // 首领：出场 → 放小怪 →（可可熊：原地砸地放冲击波）→ 走向主角 →（被踩）击退、生气、进入下一阶段；
+  // 走过头就跳回原位重来
   function bossStep(L, s, prevBottom, tol) {
     const b = s.boss, B = L.boss, p = s.p, home = B.home - b.w / 2;
+    const toSpawn = (minions) => { b.state = 'spawn'; b.t = 0; b.spawnLeft = minions; b.slamsLeft = B.slams[b.phase - 1] || 0; };
     b.t += DT;
     switch (b.state) {
       case 'intro':
-        if (b.t >= 1.4) { b.state = 'spawn'; b.t = 0; b.spawnLeft = B.minions[b.phase - 1]; }
+        if (b.t >= 1.4) toSpawn(B.minions[b.phase - 1]);
         break;
       case 'spawn':
         if (b.spawnLeft > 0 && b.t >= 0.9) {
-          s.en.push({ type: 'jelly', x: b.x - 20, y: GY - 36, w: 44, h: 36, vx: -78, x0: 0, x1: 0, patrol: false, seal: -1, minion: true, alive: true });
+          const base = { x: b.x - 20, vx: -78, x0: 0, x1: 0, patrol: false, seal: -1, minion: true, alive: true };
+          s.en.push(B.minion === 'fly'
+            ? { ...base, type: 'fly', skin: 'fly2', y: GY - 40, y0: GY - 40, w: 44, h: 34, amp: 5, w0: TAU / 1.2, ph: 0 }
+            : { ...base, type: 'jelly', skin: 'jelly', y: GY - 36, w: 44, h: 36 });
           b.spawnLeft--; b.t = 0;
           emit(s, 'minion', { x: b.x, y: b.y });
-        } else if (b.spawnLeft === 0 && b.t >= 0.9) { b.state = 'walk'; b.t = 0; }
+        } else if (b.spawnLeft === 0 && b.t >= 0.9) { b.state = b.slamsLeft > 0 ? 'slam' : 'walk'; b.t = 0; }
+        break;
+      case 'slam':
+        // 0~0.35 秒蓄力下蹲，之后跳起，0.9 秒落地推出冲击波
+        if (b.t >= 0.9) {
+          b.slamsLeft--;
+          // 矮而快：从脚下穿过的时间短，留给起跳的窗口约 0.3 秒
+          s.waves.push({ x: b.x - 10, y: GY - 20, w: 26, h: 20, vx: -260 });
+          emit(s, 'slam', { x: b.x + b.w / 2 });
+          b.state = 'slamWait'; b.t = 0;
+        }
+        break;
+      case 'slamWait':
+        if (b.t >= 0.8) { b.state = b.slamsLeft > 0 ? 'slam' : 'walk'; b.t = 0; }
         break;
       case 'walk':
         b.x -= B.speeds[b.phase - 1] * DT;
-        if (b.x + b.w < B.stopX - p.w - 240) { b.state = 'return'; b.t = 0; }
+        if (b.x + b.w < B.stopX - p.w - 240) { b.state = B.kind === 'rabbit' ? 'vanish' : 'return'; b.t = 0; }
+        break;
+      case 'vanish':
+        // 魔术兔：变个魔术瞬移回原位
+        if (b.t >= 0.6) { b.x = home; toSpawn(0); emit(s, 'vanish', { x: b.x + b.w / 2, y: b.y }); }
         break;
       case 'return':
         b.x += 190 * DT;
-        if (b.x >= home) { b.x = home; b.state = 'spawn'; b.t = 0; b.spawnLeft = 0; }
+        if (b.x >= home) { b.x = home; toSpawn(0); }
         break;
       case 'hit':
         b.x = Math.min(home + 40, b.x + 330 * DT);
         if (b.t >= 0.6) { b.state = 'angry'; b.t = 0; emit(s, 'bossAngry', { x: b.x + b.w / 2, y: b.y }); }
         break;
       case 'angry':
-        if (b.t >= 1.0) { b.phase++; b.state = 'spawn'; b.t = 0; b.spawnLeft = B.minions[b.phase - 1]; }
+        if (b.t >= 1.0) { b.phase++; toSpawn(B.minions[b.phase - 1]); }
         break;
       case 'down':
+        s.waves.length = 0;
         if (b.t >= 0.9) { b.state = 'gone'; s.finished = true; emit(s, 'finish'); }
         break;
       default: break;
+    }
+    // 冲击波：贴地向左推进，只能跳过去，不能踩
+    for (let i = s.waves.length - 1; i >= 0; i--) {
+      const w = s.waves[i];
+      w.x += w.vx * DT;
+      if (w.x + w.w < B.stopX - 500) { s.waves.splice(i, 1); continue; }
+      if (p.inv <= 0 && hit(p, w)) { hurtPlayer(s, 'wave'); if (s.dead) return; }
     }
     // 跳回原位（return）时从主角头顶越过，不造成伤害
     if (b.state === 'walk' && hit(p, b)) {
@@ -519,6 +780,10 @@
 
   function step(L, s, tap) {
     const p = s.p;
+    // 记录上一步位置，供渲染插值
+    p.px = p.x; p.py = p.y;
+    for (const e of s.en) { e.px = e.x; e.py = e.y; }
+    if (s.boss) s.boss.px = s.boss.x;
     s.n++;
     s.t += DT;
     if (tap && !s.finished) p.buf = CFG.buffer;
@@ -547,6 +812,17 @@
       if (c.phase !== 'idle' && c.phase !== 'back' && c.phase !== 'done') speed = 0;
     }
 
+    // 反重力泡泡：被包住时缓缓上升；点一下戳破并起跳，否则到时自动破掉
+    if (s.bub >= 0) {
+      s.bubT += DT;
+      if (p.buf > 0 || s.bubT >= BUB_TIME) {
+        const tapped = p.buf > 0;
+        s.bub = -1; p.buf = 0; p.air = 1;
+        p.vy = tapped ? -CFG.jumpV : 0;
+        emit(s, 'bubblePop', { x: p.x + p.w / 2, y: p.y + p.h / 2, tapped });
+      }
+    }
+
     // 跳跃：踩怪后极短窗口内点按 = 完美弹跳；地面/土狼时间 = 一段跳；空中 = 二段跳
     if (p.buf > 0) {
       if (p.stompT > 0) {
@@ -565,13 +841,19 @@
     p.stompT = Math.max(0, p.stompT - DT);
     p.inv = Math.max(0, p.inv - DT);
 
-    p.vy = Math.min(p.vy + CFG.gravity * DT, CFG.maxFall);
+    p.vy = s.bub >= 0 ? -BUB_RISE : Math.min(p.vy + CFG.gravity * DT, CFG.maxFall);
 
-    // 未解除的封印与地块一样是实心墙
+    // 未解除的封印、印记大门与地块一样是实心墙
     let walls = L.solids;
-    if (L.seals.length) {
-      const closed = L.seals.filter((_, i) => !s.seals[i]);
+    if (L.seals.length || L.seqs.length) {
+      const closed = L.seals.filter((_, i) => !s.seals[i]).concat(L.seqs.filter((_, i) => !s.seqDone[i]).map((q) => q.gate));
       if (closed.length) walls = L.solids.concat(closed);
+    }
+
+    // 站在移动平台上：跟着平台一起移动
+    if (s.ride >= 0) {
+      const a = platAt(L.plats[s.ride], s.t - DT), b2 = platAt(L.plats[s.ride], s.t);
+      p.x += b2.x - a.x; p.y += b2.y - a.y;
     }
 
     // 水平：撞墙则贴住（自动奔跑被台阶挡住，需要跳上去）
@@ -585,18 +867,31 @@
     const wasGround = p.onGround;
     p.y += p.vy * DT;
     p.onGround = false;
-    for (const b of walls) {
+    for (let i = 0; i < walls.length; i++) {
+      const b = walls[i];
       if (!hit(p, b)) continue;
-      if (prevBottom <= b.y + 0.5) { p.y = b.y - p.h; p.vy = 0; p.onGround = true; }
-      else if (p.vy < 0) { p.y = b.y + b.h; p.vy = 0; }
+      if (prevBottom <= b.y + 0.5) {
+        p.y = b.y - p.h; p.vy = 0; p.onGround = true;
+        if (i < L.solids.length) { s.safeB = i; s.safeX = p.x; } // 记录最近踩过的实心地面，供坑边救援
+      } else if (p.vy < 0) { p.y = b.y + b.h; p.vy = 0; }
     }
+    // 单向平台（含猫咪搭的桥、会崩塌的饼干平台）
+    for (let i = 0; i < L.plats.length; i++) {
+      if (s.crumble[i] > 0) { s.crumble[i] += DT; if (s.crumble[i] >= CRUMBLE_BACK) s.crumble[i] = 0; }
+    }
+    s.ride = -1;
     if (p.vy >= 0) {
-      const plats = L.cat && bridgeOpen(s) ? L.plats.concat(L.cat.bridge) : L.plats;
-      for (const pl of plats) {
-        if (p.x + p.w > pl.x && p.x < pl.x + pl.w && prevBottom <= pl.y + 0.5 && p.y + p.h >= pl.y) {
-          p.y = pl.y - p.h; p.vy = 0; p.onGround = true;
-        }
+      const onTop = (pl) => p.x + p.w > pl.x && p.x < pl.x + pl.w && prevBottom <= pl.y + 0.5 && p.y + p.h >= pl.y;
+      for (let i = 0; i < L.plats.length; i++) {
+        const pl = L.plats[i];
+        if (pl.crumble && s.crumble[i] >= CRUMBLE_FALL) continue;
+        const q = platAt(pl, s.t);
+        if (!onTop(q)) continue;
+        p.y = q.y - p.h; p.vy = 0; p.onGround = true;
+        if (pl.mv) s.ride = i;
+        if (pl.crumble && s.crumble[i] === 0) { s.crumble[i] = 1e-6; emit(s, 'crumble', { i }); }
       }
+      if (L.cat && bridgeOpen(s) && onTop(L.cat.bridge)) { p.y = L.cat.bridge.y - p.h; p.vy = 0; p.onGround = true; }
     }
     for (let i = 0; i < L.springs.length; i++) {
       s.springT[i] += DT;
@@ -624,9 +919,45 @@
         } else {
           s.doorFails++; s.doorFailsBy[i]++;
           p.x = d.respawnX; p.y = GY - p.h; p.vy = 0; p.onGround = true; p.air = 1; p.buf = 0; p.stompT = 0; p.coyote = 0;
+          s.bub = -1; s.ride = -1;
+          p.px = p.x; p.py = p.y;
           if (s.combo > 1) emit(s, 'comboEnd', { combo: s.combo });
           s.combo = 0; s.comboT = 0;
           emit(s, 'doorWrong', { i, choice, n: s.doorFailsBy[i] });
+        }
+      }
+
+      // 反重力泡泡：碰到就被包住（用掉后隔一会儿复原）
+      for (let i = 0; i < L.bubbles.length; i++) {
+        if (s.bubCD[i] > 0) { s.bubCD[i] = Math.max(0, s.bubCD[i] - DT); continue; }
+        const bb = L.bubbles[i];
+        if (s.bub < 0 && Math.hypot(bb.x - (p.x + p.w / 2), bb.y - (p.y + p.h / 2)) < bb.r + 14) {
+          s.bub = i; s.bubT = 0; s.bubCD[i] = BUB_CD;
+          p.vy = -BUB_RISE; p.onGround = false; p.air = 1; p.buf = 0;
+          emit(s, 'bubble', { i });
+        }
+      }
+
+      // 印记机关
+      for (let i = 0; i < L.seqs.length; i++) {
+        if (s.seqDone[i]) continue;
+        const q = L.seqs[i], pcx2 = p.x + p.w / 2, pcy2 = p.y + p.h / 2;
+        const touch = (m) => (m.fake ? Math.abs(m.x - pcx2) < 24 && Math.abs(m.y - pcy2) < 34 : Math.abs(m.x - pcx2) < 32 && Math.abs(m.y - pcy2) < 42);
+        const reals = q.marks.filter((m) => !m.fake), next = reals[s.seqLit[i]];
+        const wrong = q.marks.some((m) => m.fake && touch(m));
+        const atGate = p.x + p.w >= q.gate.x - 0.5 && p.x < q.gate.x;
+        if (!wrong && next && touch(next)) {
+          s.seqLit[i]++;
+          s.score += 100; s.energy += 5;
+          emit(s, 'seqMark', { i, n: s.seqLit[i], x: next.x, y: next.y });
+          if (s.seqLit[i] === reals.length) { s.seqDone[i] = 1; s.score += 200; s.energy += 15; emit(s, 'seqOpen', { i }); }
+        } else if (wrong || atGate) {
+          s.seqFails++; s.seqLit[i] = 0;
+          p.x = q.respawnX; p.y = GY - p.h; p.vy = 0; p.onGround = true; p.air = 1; p.buf = 0; p.stompT = 0; p.coyote = 0;
+          p.px = p.x; p.py = p.y; s.bub = -1; s.ride = -1;
+          if (s.combo > 1) emit(s, 'comboEnd', { combo: s.combo });
+          s.combo = 0; s.comboT = 0;
+          emit(s, 'seqRetry', { i, fake: wrong });
         }
       }
 
@@ -634,6 +965,8 @@
       const tol = s.easy ? CFG.stompTolEasy : CFG.stompTol;
       for (const e of s.en) {
         if (!e.alive) continue;
+        if (e.amp) e.y = e.y0 + e.amp * Math.sin(s.t * e.w0 + e.ph);
+        if (e.hop) e.y = e.y0 - e.hop * Math.max(0, Math.sin(s.t * e.w0 + e.ph));
         if (e.vx) {
           e.x += e.vx * DT;
           if (e.patrol) {
@@ -666,26 +999,48 @@
       }
       // 星星
       const cx = p.x + p.w / 2, cy = p.y + p.h / 2;
+      const mag = s.sk.magnet && s.comboT > 0 ? MAGNET_R : 0;
       for (let i = 0; i < L.stars.length; i++) {
         if (s.got[i]) continue;
         const st = L.stars[i];
-        if (Math.abs(st.x - cx) < 26 && Math.abs(st.y - cy) < 36) {
+        if (Math.abs(st.x - cx) < 26 + mag && Math.abs(st.y - cy) < 36 + mag) {
           s.got[i] = 1; s.stars++; s.score += 20; s.energy += 2;
-          emit(s, 'star', { x: st.x, y: st.y });
+          emit(s, 'star', { x: st.x, y: st.y, pulled: mag > 0 && (Math.abs(st.x - cx) >= 26 || Math.abs(st.y - cy) >= 36) });
         }
       }
-      if (p.y > VH + 40) { s.dead = true; s.cause = 'pit'; return; }
+      if (p.y > VH + 40) {
+        if (s.sk.rescue && !s.rescued) {
+          // 坑边救援：拎回最近踩过的地面并往回退一段，留出重新起跳的距离
+          const b = L.solids[s.safeB];
+          s.rescued = true;
+          p.x = Math.max(b.x + 10, Math.min(s.safeX, b.x + b.w - p.w - 10) - 140);
+          p.y = b.y - p.h; p.vy = 0; p.onGround = true; p.air = 1; p.buf = 0; p.stompT = 0; p.coyote = 0;
+          p.px = p.x; p.py = p.y; p.inv = CFG.invuln; s.bub = -1; s.ride = -1;
+          s.crumble.fill(0); s.bubCD.fill(0); // 饼干平台和泡泡全部复原，避免救回来又掉下去
+          p.hp--; s.hurts++;
+          if (s.combo > 1) emit(s, 'comboEnd', { combo: s.combo });
+          s.combo = 0; s.comboT = 0;
+          emit(s, 'rescue', { x: p.x + p.w / 2, y: p.y });
+          if (p.hp <= 0) { s.dead = true; s.cause = 'pit'; return; }
+        } else { s.dead = true; s.cause = 'pit'; return; }
+      }
       if (L.finish && !s.finished && p.x + p.w / 2 >= L.finish) { s.finished = true; emit(s, 'finish'); }
     }
   }
 
   // ===== 素材 =====
   const IMG = {};
-  const SPRITES = ['run1', 'run2', 'run3', 'run4', 'run5', 'run6', 'jump', 'fall', 'hurt', 'win', 'jelly', 'pudding', 'king', 'cat_idle', 'cat_cheer', 'cat_worry'];
+  const SPRITES = ['run1', 'run2', 'run3', 'run4', 'run5', 'run6', 'jump', 'fall', 'hurt', 'win', 'jelly', 'pudding', 'king',
+    'fly', 'fly2', 'bear', 'bear_jump', 'hopper', 'hopper_jump', 'rabbit', 'rabbit_cast', 'cat_idle', 'cat_cheer', 'cat_worry'];
   function loadImg(name, src) {
     return new Promise((res) => {
       const im = new Image();
-      im.onload = () => { IMG[name] = im; res(); };
+      // 预先解码成 ImageBitmap，避免精灵第一次出场时同步解码卡顿
+      im.onload = () => {
+        IMG[name] = im;
+        if (!window.createImageBitmap) { res(); return; }
+        createImageBitmap(im).then((bm) => { IMG[name] = bm; }, () => {}).finally(res);
+      };
       im.onerror = () => res();
       im.src = src;
     });
@@ -693,6 +1048,7 @@
   const assetsReady = Promise.all([
     ...SPRITES.map((n) => loadImg(n, `assets/sprites/${n}.png`)),
     loadImg('bg', 'assets/bg_far.jpg'),
+    loadImg('bg2', 'assets/bg_far2.jpg'),
   ]);
 
   // ===== 存档 =====
@@ -772,6 +1128,12 @@
         case 'boss': [0, 3, 0, 3, 7].forEach((n, i) => this.tone(196 * 2 ** (n / 12), 0.2, { at: i * 0.14, type: 'sawtooth', vol: 0.05 })); break;
         case 'bossHit': this.tone(160, 0.25, { to: 50, vol: 0.25 }); this.tone(988, 0.2, { at: 0.05, type: 'square', vol: 0.06 }); break;
         case 'minion': this.tone(520, 0.1, { to: 330, type: 'triangle', vol: 0.06 }); break;
+        case 'shield': [0, 4, 7, 11, 14].forEach((n, i) => this.tone(880 * 2 ** (n / 12), 0.16, { at: i * 0.05, vol: 0.06 })); break;
+        case 'pop2': this.tone(1400, 0.06, { to: 500, vol: 0.08 }); break;
+        case 'bubble': this.tone(300, 0.3, { to: 700, vol: 0.08 }); this.tone(600, 0.25, { at: 0.08, to: 1100, vol: 0.04 }); break;
+        case 'rescue': this.tone(400, 0.35, { to: 1200, type: 'triangle', vol: 0.1 }); this.tone(1600, 0.15, { at: 0.25, vol: 0.05 }); break;
+        case 'crunch': this.tone(900, 0.05, { to: 400, type: 'square', vol: 0.03 }); this.tone(600, 0.06, { at: 0.05, to: 300, type: 'square', vol: 0.03 }); break;
+        case 'slam': this.tone(110, 0.35, { to: 40, vol: 0.3 }); this.tone(220, 0.2, { to: 90, type: 'sawtooth', vol: 0.04 }); break;
         default: break;
       }
     },
@@ -820,6 +1182,8 @@
     safeR = (parseFloat(cs.paddingRight) || 0) / scale;
     safeT = (parseFloat(cs.paddingTop) || 0) / scale;
     solidCache.clear();
+    textCache.clear();
+    if (G.mode !== 'title' && G.L) prewarmLevel(G.L);
     checkOrientation();
   }
 
@@ -830,7 +1194,7 @@
     fxW: [], fxS: [], pops: [],
     sqx: 1, sqy: 1, runAnim: 0, dieT: 0, dieVy: 0, dieY: 0,
     cat: { x: 20, y: 300, mood: 'idle', moodT: 0, fromX: 0, fromY: 0, bubble: '', bubbleT: 0 },
-    comboPop: 0, lastCombo: 0, clear: null, countdown: 0, prevX: 0, flash: 0, shake: 0, idleT: 0,
+    comboPop: 0, lastCombo: 0, clear: null, countdown: 0, prevX: 0, flash: 0, shake: 0, idleT: 0, pulls: [],
   };
 
   // ===== 画图工具 =====
@@ -845,14 +1209,38 @@
     g.lineTo(x, y + a); g.quadraticCurveTo(x, y, x + a, y);
     g.closePath();
   }
+  // 文字位图缓存：中文网络字体首次栅格化（尤其是带描边的大字）很慢，
+  // 同一段文字只画一次，之后直接贴图，避免新提示、弹字出现时卡一下
+  const textCache = new Map();
+  function textBitmap(str, size, fill, stroke, sw) {
+    const k = scale * dpr;
+    const key = `${str}|${size}|${fill}|${stroke}|${sw}|${k.toFixed(3)}`;
+    let c = textCache.get(key);
+    if (c) return c;
+    const pad = Math.ceil(sw / 2) + 2;
+    const font = `${size}px ${FONT}`;
+    ctx.font = font;
+    const lw = ctx.measureText(str).width + pad * 2, lh = size * 1.45 + pad * 2;
+    c = document.createElement('canvas');
+    c.width = Math.max(1, Math.ceil(lw * k));
+    c.height = Math.max(1, Math.ceil(lh * k));
+    const g = c.getContext('2d');
+    g.scale(k, k);
+    g.font = font; g.textAlign = 'left'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+    if (sw) { g.lineWidth = sw; g.strokeStyle = stroke; g.strokeText(str, pad, lh / 2); }
+    g.fillStyle = fill; g.fillText(str, pad, lh / 2);
+    Object.assign(c, { lw, lh, pad });
+    textCache.set(key, c);
+    if (textCache.size > 800) textCache.delete(textCache.keys().next().value);
+    return c;
+  }
   function text(g, str, x, y, size, o = {}) {
-    g.font = `${size}px ${FONT}`;
-    g.textAlign = o.align || 'center';
-    g.textBaseline = o.base || 'middle';
-    g.lineJoin = 'round';
-    if (o.sw !== 0) { g.lineWidth = o.sw || 5; g.strokeStyle = o.stroke || '#b24d74'; g.strokeText(str, x, y); }
-    g.fillStyle = o.fill || '#fff';
-    g.fillText(str, x, y);
+    g.font = `${size}px ${FONT}`; // 调用方会紧接着用 measureText，保持字体设置
+    const sw = o.sw === 0 ? 0 : o.sw || 5, fill = o.fill || '#fff', stroke = sw ? o.stroke || '#b24d74' : '';
+    const c = textBitmap(String(str), size, fill, stroke, sw);
+    const align = o.align || 'center';
+    const dx = align === 'center' ? -c.lw / 2 : align === 'right' ? -c.lw + c.pad : -c.pad;
+    g.drawImage(c, x + dx, y - c.lh / 2, c.lw, c.lh);
   }
   function starPath(g, x, y, r, rot = 0) {
     g.beginPath();
@@ -889,15 +1277,15 @@
   }
 
   // 饼干地块：预渲染到离屏画布
-  function drawCookie(g, x, y, w, h, seed) {
+  function drawCookie(g, x, y, w, h, seed, pal = THEMES.candy.ground) {
     const grad = g.createLinearGradient(0, y, 0, y + 150);
-    grad.addColorStop(0, '#e3a564');
-    grad.addColorStop(1, '#b06d36');
+    grad.addColorStop(0, pal.top);
+    grad.addColorStop(1, pal.bottom);
     g.fillStyle = grad;
     rr(g, x, y, w, h, [12, 12, 0, 0]);
     g.fill();
-    g.lineWidth = 3; g.strokeStyle = '#6e3c1d'; g.stroke();
-    g.fillStyle = 'rgba(110, 60, 29, 0.32)';
+    g.lineWidth = 3; g.strokeStyle = pal.line; g.stroke();
+    g.fillStyle = pal.dots;
     for (let i = 0; i * 30 + 16 < w - 6; i++) {
       for (let j = 0; j < 4; j++) {
         const hx = x + 16 + i * 30 + (j % 2) * 15, hy = y + 40 + j * 30;
@@ -917,8 +1305,8 @@
       g.bezierCurveTo(sx + sw, y + 12 + d * 1.25, sx, y + 12 + d * 1.25, sx, y + 12);
     }
     g.closePath();
-    g.fillStyle = '#fff6ec'; g.fill();
-    g.lineWidth = 2; g.strokeStyle = '#e2bf9f'; g.stroke();
+    g.fillStyle = pal.icing; g.fill();
+    g.lineWidth = 2; g.strokeStyle = pal.icingLine; g.stroke();
     const colors = ['#ff7fa8', '#6fd3b5', '#a98be8', '#ffc23a', '#7ec8ff'];
     for (let i = 0; i * 17 < w - 20; i++) {
       const sx = x + 12 + i * 17 + hash(seed * 3 + i) * 8, sy = y + 2 + hash(seed * 7 + i) * 7;
@@ -928,22 +1316,51 @@
       g.restore();
     }
   }
-  function solidCanvas(b) {
-    let c = solidCache.get(b);
-    if (c) return c;
+  // 地块按 480px 切片预渲染：避免超宽画布（iOS 上限约 16384px）和首次出现时现场绘制
+  const TILE = 480;
+  function solidTiles(b) {
+    let tiles = solidCache.get(b);
+    if (tiles) return tiles;
     const k = scale * dpr, pad = 6, h = VH + 30 - b.y;
-    c = document.createElement('canvas');
-    c.width = Math.ceil((b.w + pad * 2) * k);
-    c.height = Math.ceil((h + pad * 2) * k);
-    const g = c.getContext('2d');
-    g.scale(k, k);
-    g.translate(pad - b.x, pad - b.y);
-    drawCookie(g, b.x, b.y, b.w, h, b.seed);
-    c.pad = pad;
-    c.lw = b.w + pad * 2;
-    c.lh = h + pad * 2;
-    solidCache.set(b, c);
-    return c;
+    tiles = [];
+    for (let tx = b.x - pad; tx < b.x + b.w + pad; tx += TILE) {
+      const tw = Math.min(TILE, b.x + b.w + pad - tx) + 2; // 多画 2px 与下一片重叠，避免缝隙
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.ceil(tw * k));
+      c.height = Math.max(1, Math.ceil((h + pad * 2) * k));
+      const g = c.getContext('2d');
+      g.scale(k, k);
+      g.translate(-tx, pad - b.y);
+      drawCookie(g, b.x, b.y, b.w, h, b.seed, b.pal);
+      Object.assign(c, { lx: tx, ly: b.y - pad, lw: tw, lh: h + pad * 2 });
+      tiles.push(c);
+    }
+    solidCache.set(b, tiles);
+    return tiles;
+  }
+  // 开局前把本关地块和会出现的文字都预先画好
+  function prewarmLevel(L) {
+    if (!scale) return;
+    for (const b of L.solids) solidTiles(b);
+    const strs = [[`${L.code} ${L.name}`, 40, '#fff', '#d94f7e', 8]];
+    for (const [, , h] of L.hints) strs.push([h, 20, '#5b2a45', '', 0]);
+    for (let n = 2; n <= 12; n++) strs.push([`${n} 连击！`, 22, '#fff', '#d94f7e', 5], [`${n} 连击！`, 28, '#fff', '#7a4fd0', 5], [`×${n}`, 44, '#ff6f9c', '#fff', 8]);
+    strs.push(['漂亮！', 26, '#fff', '#d94f7e', 5], ['完美弹跳', 18, '#fff', '#2f9c7d', 5], ['连击', 20, '#7a4fd0', '#fff', 5],
+      ['好痛！', 20, '#fff', '#7a4fd0', 5], ['点击屏幕跳过', 16, '#fff', '#5b2a45', 4], ['现在跳！', 16, '#5b2a45', '', 0], ['!', 34, '#ffd54a', '#b8325f', 6]);
+    for (const n of TIER_NAME) if (n) for (const c of ['#d94f7e', '#7a4fd0', '#2f9c7d']) strs.push([n, 34, '#fff', c, 8]);
+    strs.push(['清场奖励 +500', 20, '#ffe48a', '#5b2a45', 5], ['清场奖励 +1000', 20, '#ffe48a', '#5b2a45', 5]);
+    if (L.doors.length) strs.push(['选对啦！', 26, '#fff', '#2f9c7d', 5], ['正确的门', 14, '#8a5772', '', 0], ['慢行', 14, '#2f9c7d', '', 0]);
+    if (L.seals.length) strs.push(['封印解除！', 26, '#fff', '#7a4fd0', 5]);
+    if (L.seqs.length) strs.push(['大门打开！', 26, '#fff', '#4a7fd0', 5]);
+    for (const k of CAT_SKILLS) strs.push([k.short, 13, '#fff', '', 0], [k.short, 13, '#a796b8', '', 0]);
+    const learned = CAT_SKILLS.find((k) => k.from === L.idx);
+    if (learned) strs.push([`猫咪学会了新本领：${learned.name}`, 20, '#7a4fd0', '', 0], [learned.desc, 15, '#5b2a45', '', 0]);
+    if (L.boss) {
+      strs.push([L.boss.name, 17, '#5b2a45', '', 0], ['生气了！', 22, '#fff', '#b8325f', 5], ['!!', 30, '#ff5d5d', '#fff', 6],
+        [`打倒${L.boss.name}！`, 26, '#fff', '#7a4fd0', 5], ['体力补满', 18, '#fff', '#2f9c7d', 5]);
+      for (let h = 1; h <= 2; h++) strs.push([`命中！还剩 ${h} 下`, 26, '#fff', '#7a4fd0', 5]);
+    }
+    for (const [s, size, fill, stroke, sw] of strs) textBitmap(s, size, fill, stroke, sw);
   }
   function drawMacaron(x, y, w) {
     ctx.lineWidth = 2; ctx.strokeStyle = '#a84a70';
@@ -986,10 +1403,11 @@
 
   // 远景与中景
   function drawBackground(camX) {
+    const T = THEMES[(G.mode !== 'title' && G.L && G.L.theme) || 'candy'];
     const g = ctx.createLinearGradient(0, 0, 0, VH);
-    g.addColorStop(0, '#cdbaf3'); g.addColorStop(1, '#ffe6ef');
+    g.addColorStop(0, T.sky[0]); g.addColorStop(1, T.sky[1]);
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, VH);
-    const bg = IMG.bg;
+    const bg = IMG[T.bg];
     if (bg) {
       const h = VH + 50, w = (bg.width * h) / bg.height;
       const off = (camX * 0.12) % (2 * w);
@@ -999,27 +1417,36 @@
         } else ctx.drawImage(bg, x, -30, w, h);
       }
     }
-    // 中景：奶油山丘与棒棒糖树（低对比，衬托前景）
+    if (T.twinkle) {
+      // 夜空闪烁的小星星
+      for (let i = 0; i < 26; i++) {
+        const sx = ((hash(i * 3.1) * 1400 - camX * 0.05) % (W + 40) + W + 40) % (W + 40) - 20, sy = 20 + hash(i * 7.7) * 200;
+        ctx.globalAlpha = 0.35 + 0.45 * Math.abs(Math.sin(G.time * (0.8 + hash(i) * 1.5) + i));
+        ctx.fillStyle = '#fff6c8'; starPath(ctx, sx, sy, 2.5 + hash(i * 5) * 2.5, 0); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    // 中景：山丘与棒棒糖树（低对比，衬托前景）
     const off = camX * 0.35;
     const hill = (wx) => 352 + Math.sin(wx * 0.006) * 22 + Math.sin(wx * 0.017 + 1) * 9;
     const spacing = 210, first = Math.floor(off / spacing) - 1;
     for (let i = first; i < first + W / spacing + 3; i++) {
       const hsh = hash(i + 7), x = i * spacing + hsh * 80 - off, base = hill(x + off) + 6;
       const r = 17 + hsh * 12, top = base - 60 - hsh * 40;
-      ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.fillRect(x - 2, top, 4, base - top);
-      ctx.fillStyle = ['#ffc6d9', '#c9ecff', '#d9c8ff', '#ffe3a8'][Math.abs(i) % 4];
+      ctx.fillStyle = T.stick; ctx.fillRect(x - 2, top, 4, base - top);
+      ctx.fillStyle = T.lolly[Math.abs(i) % 4];
       ctx.beginPath(); ctx.arc(x, top, r, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 3;
+      ctx.strokeStyle = T.swirl; ctx.lineWidth = 3;
       ctx.beginPath();
       for (let a = 0; a < Math.PI * 5; a += 0.3) { const rad = (r * 0.9 * a) / (Math.PI * 5); ctx.lineTo(x + Math.cos(a) * rad, top + Math.sin(a) * rad); }
       ctx.stroke();
     }
-    ctx.fillStyle = '#fbe3d0';
+    ctx.fillStyle = T.hill;
     ctx.beginPath(); ctx.moveTo(0, VH);
     for (let x = 0; x <= W + 20; x += 20) ctx.lineTo(x, hill(x + off));
     ctx.lineTo(W, VH); ctx.closePath(); ctx.fill();
     const haze = ctx.createLinearGradient(0, 260, 0, VH);
-    haze.addColorStop(0, 'rgba(255,245,250,0)'); haze.addColorStop(1, 'rgba(255,240,246,0.55)');
+    haze.addColorStop(0, T.haze[0]); haze.addColorStop(1, T.haze[1]);
     ctx.fillStyle = haze; ctx.fillRect(0, 260, W, VH - 260);
   }
 
@@ -1090,7 +1517,8 @@
           break;
         case 'star':
           Snd.sfx('star');
-          burst(G.fxW, e.x, e.y, 6, { kind: 'dot', speed: 120, g: 0, size: 3, colors: ['#ffd54a', '#fff'], life: 0.35 });
+          if (e.pulled) G.pulls.push({ x: e.x, y: e.y, t: 0 });
+          else burst(G.fxW, e.x, e.y, 6, { kind: 'dot', speed: 120, g: 0, size: 3, colors: ['#ffd54a', '#fff'], life: 0.35 });
           break;
         case 'hurt':
           Snd.sfx('hurt');
@@ -1135,7 +1563,7 @@
         }
         case 'bossIntro':
           Snd.sfx('boss');
-          G.cat.bubble = '小心！是捣蛋布丁王！'; G.cat.bubbleT = 1.6;
+          G.cat.bubble = `小心！是${G.L.boss.name}！`; G.cat.bubbleT = 1.6;
           popup(s.p.x + s.p.w / 2, s.p.y - 30, '体力补满', { size: 18, stroke: '#2f9c7d' });
           break;
         case 'minion': Snd.sfx('minion'); break;
@@ -1143,12 +1571,63 @@
           Snd.sfx('bossHit');
           G.shake = 0.35;
           burst(G.fxW, e.x, e.y + 10, 26, { kind: 'star', speed: 320, size: 9, colors: STAR_COLORS, life: 0.9 });
-          popup(e.x, e.y - 40, e.hp > 0 ? `命中！还剩 ${e.hp} 下` : '打倒布丁王！', { size: 26, stroke: '#7a4fd0' });
+          popup(e.x, e.y - 40, e.hp > 0 ? `命中！还剩 ${e.hp} 下` : `打倒${G.L.boss.name}！`, { size: 26, stroke: '#7a4fd0' });
           if (e.combo >= 2) popup(e.x, e.y - 72, `${e.combo} 连击！`, { size: 20 });
           G.cat.mood = 'cheer'; G.cat.moodT = 1.2;
           G.comboPop = 1;
           break;
         case 'bossAngry': popup(e.x, e.y - 30, '生气了！', { size: 22, stroke: '#b8325f' }); Snd.sfx('minion'); break;
+        case 'shield':
+          Snd.sfx('shield');
+          popup(s.p.x + s.p.w / 2, s.p.y - 40, '泡泡护盾！', { size: 22, stroke: '#2f8fd0' });
+          G.cat.bubble = '护盾给你喵！'; G.cat.bubbleT = 1.4; G.cat.mood = 'cheer'; G.cat.moodT = 1.2;
+          break;
+        case 'shieldBreak':
+          Snd.sfx('pop2');
+          burst(G.fxW, e.x, e.y, 14, { kind: 'dot', speed: 220, size: 4, colors: ['#8fe3ff', '#fff'], life: 0.5, g: 0 });
+          popup(e.x, e.y - 50, '护盾挡住了！', { size: 22, stroke: '#2f8fd0' });
+          break;
+        case 'rescue':
+          Snd.sfx('rescue');
+          G.flash = 0.3;
+          G.cat.x = e.x - 30; G.cat.y = e.y - 40;
+          G.cat.bubble = '抓住你了喵！'; G.cat.bubbleT = 1.6; G.cat.mood = 'worry'; G.cat.moodT = 1.2;
+          popup(e.x, e.y - 30, '猫咪救援！扣 1 颗心', { size: 20, stroke: '#7a4fd0' });
+          burst(G.fxW, e.x, e.y + 20, 12, { kind: 'star', speed: 160, size: 6, colors: ['#c7b3ff', '#fff'], life: 0.6 });
+          break;
+        case 'bubble': Snd.sfx('bubble'); break;
+        case 'bubblePop':
+          Snd.sfx('pop2');
+          burst(G.fxW, e.x, e.y, 12, { kind: 'dot', speed: 180, size: 4, colors: ['#d9f0ff', '#fff', '#e5d9ff'], life: 0.45, g: 0 });
+          if (e.tapped) { G.sqx = 0.8; G.sqy = 1.2; }
+          break;
+        case 'seqMark':
+          Snd.sfx('pop', e.n * 3);
+          burst(G.fxW, e.x, e.y, 12, { kind: 'star', speed: 200, size: 6, colors: ['#ffd54a', '#fff'], life: 0.6 });
+          break;
+        case 'seqOpen':
+          Snd.sfx('seal');
+          popup(G.L.seqs[e.i].gate.x, G.L.seqs[e.i].gate.y + 60, '大门打开！', { size: 26, stroke: '#4a7fd0' });
+          break;
+        case 'seqRetry':
+          Snd.sfx('wrong');
+          G.flash = 0.45;
+          G.cat.x = s.p.x - 38; G.cat.y = s.p.y - 16; G.cat.mood = 'worry'; G.cat.moodT = 2;
+          G.cat.bubble = e.fake ? '那是乌云印记喵！' : '漏掉印记了喵…按顺序碰亮！';
+          G.cat.bubbleT = 2.4;
+          break;
+        case 'vanish': Snd.sfx('magic', 1); break;
+        case 'crumble': {
+          const pl = G.L.plats[e.i];
+          Snd.sfx('crunch');
+          burst(G.fxW, pl.x + pl.w / 2, pl.y + 10, 6, { kind: 'dot', speed: 90, size: 3, colors: ['#e3b06c', '#c48b4a'], life: 0.5, g: 600 });
+          break;
+        }
+        case 'slam':
+          Snd.sfx('slam');
+          G.shake = 0.3;
+          burst(G.fxW, e.x, GY - 4, 14, { kind: 'dot', speed: 220, size: 4, colors: ['#9a6240', '#fff3e4'], life: 0.6, dir: -Math.PI / 2, spread: 2.4 });
+          break;
         case 'finish': break;
         default: break;
       }
@@ -1283,10 +1762,138 @@
     } else if (b.state === 'down') {
       sy = Math.max(0.2, 1 - t); sx = 1 + t * 0.4; alpha = Math.max(0, 1 - t * 0.9);
     }
+    const kind = G.L.boss.kind;
+    const [idle, act, sc] = BOSS_ART[kind];
+    let key = idle;
+    if (b.state === 'slam') {
+      if (kind === 'rabbit') { key = act; y -= Math.max(0, Math.sin((t / 0.9) * Math.PI)) * 18; }
+      else if (t < 0.35) { const q = t / 0.35; sx = 1 + q * 0.12; sy = 1 - q * 0.15; }
+      else { y -= Math.sin(((t - 0.35) / 0.55) * Math.PI) * 120; key = act; }
+    } else if (b.state === 'vanish') {
+      alpha = Math.max(0, 1 - t / 0.4); sx = 1 + t * 0.6; sy = 1 + t * 0.6;
+      if (Math.random() < 0.5) burst(G.fxW, x + (Math.random() - 0.5) * 60, y - 50, 1, { kind: 'star', speed: 80, size: 5, colors: ['#c7b3ff', '#fff'], life: 0.5, g: -100 });
+    }
     ctx.fillStyle = 'rgba(90, 40, 30, 0.22)';
-    ctx.beginPath(); ctx.ellipse(b.x + b.w / 2, GY, 46, 7, 0, 0, Math.PI * 2); ctx.fill();
-    sprite('king', x, y, 0.34, { flip, sx, sy, alpha });
-    if (b.state === 'angry') text(ctx, '!!', x + 36, b.y - 18 + Math.sin(G.time * 20) * 3, 30, { fill: '#ff5d5d', stroke: '#fff', sw: 6 });
+    ctx.beginPath(); ctx.ellipse(b.x + b.w / 2, GY, b.w * 0.55, 7, 0, 0, Math.PI * 2); ctx.fill();
+    sprite(key, x, y, sc, { flip, sx, sy, alpha });
+    if (b.state === 'angry') text(ctx, '!!', x + 40, b.y - 18 + Math.sin(G.time * 20) * 3, 30, { fill: '#ff5d5d', stroke: '#fff', sw: 6 });
+  }
+  function drawPaw(x, y, r, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(x, y + r * 0.4, r, 0, TAU); ctx.fill();
+    for (const [dx, dy] of [[-1, -0.9], [-0.35, -1.35], [0.35, -1.35], [1, -0.9]]) {
+      ctx.beginPath(); ctx.arc(x + dx * r, y + dy * r, r * 0.38, 0, TAU); ctx.fill();
+    }
+  }
+  function drawCarousel(q) {
+    // 旋转木马踏板：金色台面 + 粉色裙边 + 交替闪烁的小灯泡
+    ctx.strokeStyle = 'rgba(255, 215, 122, 0.5)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(q.x + q.w / 2, q.y + 18); ctx.lineTo(q.x + q.w / 2, q.y + 46); ctx.stroke();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#7a4a10';
+    ctx.fillStyle = '#ff8fb5'; rr(ctx, q.x + 4, q.y + 10, q.w - 8, 10, [0, 0, 7, 7]); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#ffd77a'; rr(ctx, q.x, q.y, q.w, 13, 7); ctx.fill(); ctx.stroke();
+    for (let x = q.x + 10, k = 0; x < q.x + q.w - 6; x += 16, k++) {
+      ctx.fillStyle = (Math.floor(G.time * 4) + k) % 2 ? '#fffbe0' : '#ff9ec0';
+      ctx.beginPath(); ctx.arc(x, q.y + 6.5, 3, 0, TAU); ctx.fill();
+    }
+  }
+  function drawBubble(x, y, r, a) {
+    ctx.save();
+    ctx.globalAlpha = a;
+    const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.1, x, y, r);
+    g.addColorStop(0, 'rgba(255, 255, 255, 0.35)'); g.addColorStop(0.7, 'rgba(180, 225, 255, 0.18)'); g.addColorStop(1, 'rgba(200, 170, 255, 0.55)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.beginPath(); ctx.ellipse(x - r * 0.38, y - r * 0.42, r * 0.18, r * 0.09, -0.6, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  function drawSeq(q, s, i, x0, x1) {
+    const lit = s ? s.seqLit[i] : 0, done = s && s.seqDone[i], fails = s ? s.seqFails : 0;
+    let n = 0;
+    for (const m of q.marks) {
+      if (m.x < x0 || m.x > x1) { if (!m.fake) n++; continue; }
+      const bob = Math.sin(G.time * 3 + m.x) * 3;
+      if (m.fake) {
+        // 假印记：灰色乌云，碰到要重来
+        ctx.fillStyle = '#6d6a8c';
+        for (const [dx, dy, r] of [[-12, 4, 13], [0, -6, 16], [13, 3, 12]]) { ctx.beginPath(); ctx.arc(m.x + dx, m.y + dy + bob, r, 0, TAU); ctx.fill(); }
+        ctx.strokeStyle = '#3d3a5a'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(m.x - 7, m.y - 6 + bob); ctx.lineTo(m.x + 7, m.y + 6 + bob); ctx.moveTo(m.x + 7, m.y - 6 + bob); ctx.lineTo(m.x - 7, m.y + 6 + bob); ctx.stroke();
+        continue;
+      }
+      n++;
+      const on = done || n <= lit;
+      ctx.fillStyle = on ? 'rgba(255, 228, 120, 0.5)' : 'rgba(199, 179, 255, 0.35)';
+      ctx.beginPath(); ctx.arc(m.x, m.y + bob, 26 + (on ? Math.sin(G.time * 6) * 3 : 0), 0, TAU); ctx.fill();
+      ctx.fillStyle = on ? '#ffd54a' : '#fff'; ctx.beginPath(); ctx.arc(m.x, m.y + bob, 18, 0, TAU); ctx.fill();
+      ctx.strokeStyle = on ? '#d98a00' : '#7a4fd0'; ctx.lineWidth = 2.5; ctx.stroke();
+      text(ctx, `${n}`, m.x, m.y + bob + 1, 20, { fill: on ? '#fff' : '#7a4fd0', stroke: on ? '#d98a00' : '#fff', sw: 4 });
+      // 失败过一次后，下一个该碰的印记上出现提示箭头
+      if (!done && fails > 0 && n === lit + 1) {
+        const ay = m.y + bob - 48 + Math.sin(G.time * 6) * 5;
+        ctx.fillStyle = '#ff6f9c'; ctx.beginPath(); ctx.moveTo(m.x - 10, ay); ctx.lineTo(m.x + 10, ay); ctx.lineTo(m.x, ay + 14); ctx.closePath(); ctx.fill();
+      }
+    }
+    if (!done && q.gate.x > x0 && q.gate.x < x1) {
+      const gt = q.gate, h = GY - gt.y, cx = gt.x + gt.w / 2;
+      const g = ctx.createLinearGradient(gt.x, 0, gt.x + gt.w, 0);
+      g.addColorStop(0, 'rgba(126, 200, 255, 0.2)'); g.addColorStop(0.5, 'rgba(180, 225, 255, 0.85)'); g.addColorStop(1, 'rgba(126, 200, 255, 0.2)');
+      ctx.fillStyle = g; rr(ctx, gt.x, gt.y, gt.w, h, 12); ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = '#4a7fd0'; ctx.stroke();
+      const total = q.marks.filter((m) => !m.fake).length;
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx, gt.y + h / 2, 22, 0, TAU); ctx.fill();
+      ctx.strokeStyle = '#4a7fd0'; ctx.lineWidth = 3; ctx.stroke();
+      text(ctx, `${lit}/${total}`, cx, gt.y + h / 2 + 1, 15, { fill: '#4a7fd0', sw: 0 });
+    }
+  }
+  const BOSS_ART = { king: ['king', 'king', 0.34], bear: ['bear', 'bear_jump', 0.36], rabbit: ['rabbit', 'rabbit_cast', 0.36] };
+  function drawWaves(s) {
+    for (const w of s.waves) {
+      if (G.L.boss && G.L.boss.kind === 'rabbit') {
+        // 魔术兔放出的是贴地滚动的魔法星星
+        ctx.fillStyle = 'rgba(255, 228, 120, 0.35)';
+        ctx.beginPath(); ctx.arc(w.x + w.w / 2, w.y + w.h / 2, w.w * 0.75, 0, TAU); ctx.fill();
+        drawStar(ctx, w.x + w.w / 2, w.y + w.h / 2, w.w * 0.55, G.time * -12);
+        if (Math.random() < 0.3) burst(G.fxW, w.x + w.w, w.y + 6, 1, { kind: 'star', speed: 40, size: 3, colors: ['#ffd54a', '#fff'], life: 0.4, g: 0 });
+        continue;
+      }
+      ctx.fillStyle = '#9a6240';
+      ctx.beginPath();
+      ctx.moveTo(w.x - 4, GY);
+      ctx.quadraticCurveTo(w.x + 2, w.y - 8, w.x + w.w * 0.5, w.y - 2);
+      ctx.quadraticCurveTo(w.x + w.w + 8, w.y + 6, w.x + w.w + 6, GY);
+      ctx.closePath(); ctx.fill();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = '#4a2a18'; ctx.stroke();
+      ctx.fillStyle = 'rgba(255, 240, 220, 0.85)';
+      ctx.beginPath(); ctx.ellipse(w.x + w.w * 0.4, w.y + 4, 7, 3, -0.4, 0, Math.PI * 2); ctx.fill();
+      if (Math.random() < 0.3) burst(G.fxW, w.x + w.w, GY - 4, 1, { kind: 'dot', speed: 60, size: 3, colors: ['#c98a4b', '#fff3e4'], life: 0.4, g: 300 });
+    }
+  }
+  function drawCrumble(pl, t) {
+    let dx = 0, dy = 0, alpha = 1;
+    if (t > 0 && t < CRUMBLE_FALL) dx = Math.sin(t * 70) * 2.5 * (t / CRUMBLE_FALL);
+    else if (t >= CRUMBLE_FALL) {
+      const k = t - CRUMBLE_FALL;
+      if (t > CRUMBLE_BACK - 0.4) alpha = (t - (CRUMBLE_BACK - 0.4)) / 0.4; // 复原前淡入
+      else { dy = k * k * 900; alpha = Math.max(0, 1 - k * 1.6); }
+    }
+    if (alpha <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(dx, dy);
+    ctx.fillStyle = '#f2cf8f'; rr(ctx, pl.x, pl.y, pl.w, 18, 6); ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#a8692f'; ctx.stroke();
+    ctx.fillStyle = '#c48b4a';
+    for (let x = pl.x + 12; x < pl.x + pl.w - 6; x += 18) { ctx.beginPath(); ctx.arc(x, pl.y + 9, 2, 0, Math.PI * 2); ctx.fill(); }
+    if (t > 0 && t < CRUMBLE_FALL) {
+      ctx.strokeStyle = '#6e3c1d'; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(pl.x + pl.w * 0.3, pl.y); ctx.lineTo(pl.x + pl.w * 0.36, pl.y + 8); ctx.lineTo(pl.x + pl.w * 0.3, pl.y + 18);
+      ctx.moveTo(pl.x + pl.w * 0.68, pl.y); ctx.lineTo(pl.x + pl.w * 0.62, pl.y + 10); ctx.lineTo(pl.x + pl.w * 0.7, pl.y + 18);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
   // 站定时（首领战、被墙挡住）猫咪提示起跳时机：怪物进入"跳起后正好落在它头上"的距离区间
   function jumpCue(s) {
@@ -1306,6 +1913,14 @@
       if (!e.alive || !e.vx) continue;
       if ((e.vx < 0 && e.x > p.x) || (e.vx > 0 && e.x < p.x)) consider(e, Math.abs(e.vx));
     }
+    // 冲击波要整个从脚下穿过，窗口比"落到头上"更靠前
+    for (const w of s.waves) {
+      const gap = w.x - (p.x + p.w), v = -w.vx;
+      if (gap < 0) continue;
+      const disc = Math.sqrt(Math.max(0, CFG.jumpV ** 2 - 2 * CFG.gravity * w.h));
+      const t1 = (CFG.jumpV - disc) / CFG.gravity, t2 = (CFG.jumpV + disc) / CFG.gravity;
+      if (gap >= v * (t1 + 0.02) && gap <= v * (t2 - 0.04) - (w.w + p.w) && (!best || gap < best.gap)) best = { x: w.x + w.w / 2, y: w.y, gap };
+    }
     return best;
   }
 
@@ -1314,8 +1929,10 @@
     if (L.finish > x0 - 100 && L.finish < x1 + 100) drawGoal(L.finish);
     for (const b of L.solids) {
       if (b.x + b.w < x0 || b.x > x1) continue;
-      const c = solidCanvas(b);
-      if (c.width && c.height) ctx.drawImage(c, b.x - c.pad, b.y - c.pad, c.lw, c.lh);
+      for (const c of solidTiles(b)) {
+        if (c.lx + c.lw < x0 || c.lx > x1 || !c.width || !c.height) continue;
+        ctx.drawImage(c, c.lx, c.ly, c.lw, c.lh);
+      }
     }
     for (const z of L.slow) if (z[1] > x0 && z[0] < x1) drawSlowZone(z);
     L.doors.forEach((d, i) => {
@@ -1360,7 +1977,19 @@
         }
       }
     }
-    for (const pl of L.plats) if (pl.x + pl.w > x0 && pl.x < x1) drawMacaron(pl.x, pl.y, pl.w);
+    L.plats.forEach((pl, i) => {
+      if (pl.x + pl.w + Math.abs(pl.dx) < x0 || pl.x - Math.abs(pl.dx) > x1) return;
+      if (pl.crumble) drawCrumble(pl, s ? s.crumble[i] : 0);
+      else if (pl.mv) drawCarousel(platAt(pl, s ? s.t : G.time));
+      else drawMacaron(pl.x, pl.y, pl.w);
+    });
+    L.seqs.forEach((q, i) => drawSeq(q, s, i, x0, x1));
+    L.bubbles.forEach((bb, i) => {
+      if (bb.x < x0 - 40 || bb.x > x1 + 40) return;
+      const cd = s ? s.bubCD[i] : 0;
+      if (cd > 0.4) return;
+      drawBubble(bb.x, bb.y + Math.sin(t * 2 + i) * 5, bb.r, cd > 0 ? 1 - cd / 0.4 : 1);
+    });
     L.springs.forEach((sp, i) => { if (sp.x > x0 && sp.x < x1) drawSpring(sp, s ? s.springT[i] : 9); });
     L.stars.forEach((st, i) => {
       if ((s && s.got[i]) || st.x < x0 || st.x > x1) return;
@@ -1376,11 +2005,18 @@
         ctx.fillStyle = 'rgba(169, 139, 232, 0.35)';
         ctx.beginPath(); ctx.ellipse(e.x + e.w / 2, e.y + e.h / 2, 36, 28, 0, 0, Math.PI * 2); ctx.fill();
       }
-      sprite(e.type, e.x + e.w / 2, e.y + e.h + 3, e.type === 'jelly' ? 0.29 : 0.27, { flip: e.vx > 0, sx: 2 - sq, sy: sq });
+      const fly = e.type === 'fly', fsq = fly ? 1 + Math.sin(t * 18 + e.x) * 0.06 : sq;
+      if (e.type === 'hopper') {
+        const up = e.y < e.y0 - 4;
+        sprite(up ? 'hopper_jump' : 'hopper', e.x + e.w / 2, e.y + e.h + 3, 0.235, { flip: e.vx > 0, sx: up ? 0.92 : 2 - sq, sy: up ? 1.08 : sq });
+      } else {
+        sprite(e.skin || e.type, e.x + e.w / 2, e.y + e.h + 3, fly ? 0.25 : e.type === 'jelly' ? 0.29 : 0.27, { flip: e.vx > 0, sx: 2 - fsq, sy: fsq });
+      }
       if (e.seal >= 0) drawStar(ctx, e.x + e.w / 2, e.y - 30 + Math.sin(t * 5) * 4, 11, t);
     }
     if (!s) return;
     drawBoss(s);
+    drawWaves(s);
     const p = s.p;
     // 站定迎击时的起跳提示
     const cue = G.mode === 'play' ? jumpCue(s) : null;
@@ -1416,6 +2052,22 @@
     }
     const flicker = p.inv > 0 && Math.floor(G.time * 18) % 2 ? 0.35 : 1;
     sprite(key, p.x + p.w / 2, p.y + p.h + 3 + G.dieY, 0.42, { sx: G.sqx, sy: G.sqy, alpha: flicker });
+    if (s.bub >= 0) drawBubble(p.x + p.w / 2, p.y + p.h / 2 - 6, 46 + Math.sin(t * 8) * 2, 1);
+    if (s.shield) {
+      // 猫咪的泡泡护盾
+      ctx.save();
+      ctx.globalAlpha = 0.55 + Math.sin(t * 6) * 0.15;
+      ctx.strokeStyle = '#8fe3ff'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(p.x + p.w / 2, p.y + p.h / 2 - 8, 44, 0, TAU); ctx.stroke();
+      ctx.fillStyle = 'rgba(143, 227, 255, 0.15)'; ctx.fill();
+      ctx.restore();
+      drawPaw(p.x + p.w / 2 + 34, p.y - 8, 6, '#8fe3ff');
+    }
+    // 星星磁吸：被吸过来的星星飞向主角
+    for (const q of G.pulls) {
+      const k = Math.min(1, q.t / 0.25), e2 = k * k;
+      drawStar(ctx, q.x + (p.x + p.w / 2 - q.x) * e2, q.y + (p.y + p.h / 2 - q.y) * e2, 11 * (1 - k * 0.5), k * 6);
+    }
     drawFx(G.fxW);
     for (const q of G.pops) {
       const k = q.life / q.max;
@@ -1450,7 +2102,7 @@
       const bw = 250, bx = W / 2 - bw / 2, by = VH - 48;
       ctx.fillStyle = 'rgba(255, 248, 240, 0.94)'; rr(ctx, bx, by, bw, 36, 18); ctx.fill();
       ctx.strokeStyle = '#ffc2d6'; ctx.lineWidth = 3; ctx.stroke();
-      text(ctx, '捣蛋布丁王', bx + 18, by + 19, 17, { align: 'left', fill: '#5b2a45', sw: 0 });
+      text(ctx, L.boss.name, bx + 18, by + 19, 17, { align: 'left', fill: '#5b2a45', sw: 0 });
       for (let k = 0; k < 3; k++) {
         const cx = bx + 152 + k * 32, on = k < b.hp;
         ctx.fillStyle = on ? '#ffc23a' : '#eadbe2';
@@ -1502,9 +2154,33 @@
       text(ctx, `${L.code} ${L.name}`, W / 2, 200, 40, { fill: '#fff', stroke: '#d94f7e', sw: 8 });
       ctx.globalAlpha = 1;
     }
+    // 猫咪学会新本领的横幅（解锁关开场 4 秒）
+    const learned = CAT_SKILLS.find((k) => k.from === L.idx);
+    if (learned && s.t > 0.6 && s.t < 4.6) {
+      const a = Math.min(1, (s.t - 0.6) * 3, (4.6 - s.t) * 2);
+      ctx.globalAlpha = a;
+      const bw = 420, bx = W / 2 - bw / 2, by = 236;
+      ctx.fillStyle = 'rgba(255, 248, 240, 0.96)'; rr(ctx, bx, by, bw, 72, 22); ctx.fill();
+      ctx.strokeStyle = '#c7b3ff'; ctx.lineWidth = 3; ctx.stroke();
+      if (IMG.cat_cheer) sprite('cat_cheer', bx + 44, by + 66, 0.3);
+      text(ctx, `猫咪学会了新本领：${learned.name}`, bx + 84, by + 24, 20, { align: 'left', fill: '#7a4fd0', sw: 0 });
+      text(ctx, learned.desc, bx + 84, by + 50, 15, { align: 'left', fill: '#5b2a45', sw: 0 });
+      ctx.globalAlpha = 1;
+    }
+    // 已掌握的猫咪本领：亮起 = 当前可用
+    const owned = CAT_SKILLS.filter((k) => s.sk[k.id]);
+    owned.forEach((k, i) => {
+      const on = k.id === 'shield' ? s.shield : k.id === 'rescue' ? !s.rescued : s.comboT > 0;
+      const px = x0 + i * 62, py = y0 + 54;
+      ctx.fillStyle = on ? 'rgba(199, 179, 255, 0.95)' : 'rgba(255, 248, 240, 0.8)';
+      rr(ctx, px, py, 56, 22, 11); ctx.fill();
+      ctx.strokeStyle = on ? '#7a4fd0' : '#e3d6f2'; ctx.lineWidth = 2; ctx.stroke();
+      drawPaw(px + 12, py + 12, 3.2, on ? '#fff' : '#c9bcd9');
+      text(ctx, k.short, px + 36, py + 11, 13, { fill: on ? '#fff' : '#a796b8', sw: 0 });
+    });
     let hint = null;
     const fight = s.boss && s.boss.state !== 'idle';
-    if (fight) hint = s.boss.phase === 1 && s.boss.state !== 'gone' ? '站稳！等布丁王走近，听猫咪喊“现在跳！”' : null;
+    if (fight) hint = s.boss.phase === 1 && s.boss.state !== 'gone' ? ({ bear: '冲击波要跳过去，它冲过来时踩它头！', rabbit: '魔法星星要跳过去，它走过来时踩它头！' }[L.boss.kind] || '站稳！等布丁王走近，听猫咪喊“现在跳！”') : null;
     else for (const [a, b, str] of L.hints) if (p.x >= a && p.x <= b) hint = str;
     if (G.mode === 'play' && G.s.easy && p.x < 1200 && !hint) hint = '落下时踩在怪物头上会弹起来';
     if (hint) {
@@ -1526,7 +2202,7 @@
     const mobs = [], n = 7, left = W * 0.5, span = W * 0.42 - safeR;
     for (let i = 0; i < n; i++) {
       mobs.push({
-        type: i === 3 ? 'king' : i % 2 ? 'pudding' : 'jelly',
+        type: i === 3 ? (G.L.boss ? BOSS_ART[G.L.boss.kind][0] : 'king') : i % 2 ? (G.idx >= 5 ? 'fly' : 'pudding') : G.idx >= 10 ? 'hopper' : 'jelly',
         x: left + (span * i) / (n - 1) + (hash(i) - 0.5) * 18,
         y: GY - (i === 3 ? 0 : (i % 3) * 6),
         appear: 0.1 + i * 0.05, at: 0, done: false,
@@ -1604,7 +2280,8 @@
       const k = Math.min(1, Math.max(0, (t - m.appear) / 0.25));
       if (k <= 0) continue;
       const bounce = k < 1 ? 1 + Math.sin(k * Math.PI) * 0.3 : 1 + Math.sin(t * 8 + m.x) * 0.04;
-      sprite(m.type, m.x, m.y + 4, m.type === 'king' ? 0.42 : 0.29, { sx: k * (2 - bounce), sy: k * bounce, flip: false });
+      const msc = { king: 0.42, bear: 0.38, rabbit: 0.38, fly: 0.26, hopper: 0.25 }[m.type] || 0.29;
+      sprite(m.type, m.x, m.y + 4 - (m.type === 'fly' ? 30 : 0), msc, { sx: k * (2 - bounce), sy: k * bounce, flip: false });
     }
     drawFx(G.fxS);
     const ta = Math.min(1, t * 3);
@@ -1626,6 +2303,7 @@
   function startLevel(i, auto) {
     G.idx = i;
     G.L = LEVELS[i];
+    prewarmLevel(G.L);
     G.s = newRun(G.L, !auto && (G.fails[i] || 0) >= 2);
     G.auto = auto ? auto.slice() : null;
     G.acc = 0; G.pendingTap = false; G.clear = null;
@@ -1657,6 +2335,8 @@
   function goSelect() {
     G.mode = 'title';
     btnPause.hidden = true;
+    // 默认显示最新解锁关卡所在的章节
+    selCh = save.unlocked > CHAPTERS[1][0] ? 1 : 0;
     renderCards();
     show('scrSelect');
   }
@@ -1682,7 +2362,8 @@
     const FAIL = {
       pit: ['掉进坑里了', '在坑边点一下起跳；距离不够时，在空中再点一下二段跳。'],
       enemy: ['被怪物撞到了', '从上方落下、踩在怪物头上就能打倒它；从侧面碰到会受伤。'],
-      boss: ['被布丁王撞到了', '别急着跳：等它走近、猫咪喊“现在跳！”时再起跳，就能落在它头上。'],
+      boss: [`被${G.L.boss ? G.L.boss.name : '首领'}撞到了`, '别急着跳：等它走近、猫咪喊“现在跳！”时再起跳，就能落在它头上。'],
+      wave: ['被贴地攻击撞到了', `${G.L.boss ? G.L.boss.name : '首领'}会放出贴地滚来的攻击：等它靠近、猫咪喊“现在跳！”时跳过去。`],
     };
     const [title, tip] = FAIL[s.cause] || FAIL.enemy;
     $('#failTitle').textContent = title;
@@ -1699,6 +2380,8 @@
     energy: (n, s) => [s.energy >= n, `魔法能量 ≥ ${n}（本次 ${Math.floor(s.energy)}）`],
     noHurt: (n, s) => [s.hurts === 0, `无伤通关（本次受击 ${s.hurts} 次）`],
     doorFirst: (n, s) => [s.doorFails === 0, `每扇门都一次选对（本次选错 ${s.doorFails} 次）`],
+    perfect: (n, s) => [s.perfects >= n, `完美弹跳 ≥ ${n} 次（本次 ${s.perfects}）`],
+    seqFirst: (n, s) => [s.seqFails === 0, `印记一次全部点亮（本次重来 ${s.seqFails} 次）`],
   };
   const evalGoals = (L, s) => L.goals.map(([k, n]) => GOALS[k](n, s));
 
@@ -1714,7 +2397,7 @@
     persist();
     Snd.sfx('win');
     $('#resCode').textContent = `${L.code} ${L.name}`;
-    const checks = [[true, L.boss ? '打倒布丁王并完成清场' : '抵达终点并完成清场'], ...goals];
+    const checks = [[true, L.boss ? `打倒${L.boss.name}并完成清场` : '抵达终点并完成清场'], ...goals];
     $('#resChecks').innerHTML = checks.map(([ok, str]) => `<li class="${ok ? 'ok' : ''}">${str}</li>`).join('');
     const tier = G.clear ? ['', '基础', '华丽', '传奇'][G.clear.tier] : '—';
     const stats = [['分数', s.score], ['最高连击', s.maxCombo], ['魔法能量', Math.floor(s.energy)], ['清场', tier]];
@@ -1728,10 +2411,15 @@
     setTimeout(() => $('#btnNext').focus({ preventScroll: true }), 50);
   }
 
+  const CHAPTERS = [[0, 10], [10, 15]];
+  let selCh = 0;
   function renderCards() {
     const box = $('#levelCards');
     box.innerHTML = '';
-    LEVELS.forEach((L, i) => {
+    ['#tabCh1', '#tabCh2'].forEach((id, c) => { const t = $(id); t.classList.toggle('on', c === selCh); t.setAttribute('aria-selected', c === selCh); });
+    const [from, to] = CHAPTERS[selCh];
+    LEVELS.slice(from, to).forEach((L, j) => {
+      const i = from + j;
       const locked = i >= save.unlocked;
       const best = save.best[L.code];
       const n = best ? best.stars : 0;
@@ -1739,7 +2427,7 @@
       b.className = 'card' + (locked ? ' locked' : '');
       b.disabled = locked;
       b.setAttribute('aria-label', `${L.code} ${L.name}${locked ? '（未解锁）' : ''}`);
-      b.innerHTML = `<span class="num">${i + 1}</span><span class="name">${L.name}</span><span class="tag">${L.tag}</span>`
+      b.innerHTML = `<span class="num">${L.code}</span><span class="name">${L.name}</span><span class="tag">${L.tag}</span>`
         + `<span class="stars"><b>${'★'.repeat(n)}</b>${'★'.repeat(3 - n)}</span>`
         + `<span class="best">${locked ? '通关上一关后解锁' : best ? `最佳 ${best.score} 分` : '未挑战'}</span>`;
       b.addEventListener('click', () => { Snd.init(); Snd.sfx('click'); startLevel(i); });
@@ -1781,6 +2469,8 @@
   });
   $('#btnSelect').addEventListener('click', () => { Snd.init(); Snd.sfx('click'); goSelect(); });
   $('#btnBack').addEventListener('click', () => { Snd.sfx('click'); goTitle(); });
+  $('#tabCh1').addEventListener('click', () => { Snd.sfx('click'); selCh = 0; renderCards(); });
+  $('#tabCh2').addEventListener('click', () => { Snd.sfx('click'); selCh = 1; renderCards(); });
   $('#btnUnlock').addEventListener('click', () => { save.unlocked = LEVELS.length; persist(); renderCards(); });
   $('#btnResume').addEventListener('click', () => { Snd.sfx('click'); resumeGame(); });
   $('#btnRestart').addEventListener('click', () => { Snd.sfx('click'); startLevel(G.idx); });
@@ -1870,6 +2560,7 @@
       G.sqy += (1 - G.sqy) * Math.min(1, dt * 12);
       G.comboPop = Math.max(0, G.comboPop - dt * 4);
       G.flash = Math.max(0, G.flash - dt);
+      for (let i = G.pulls.length - 1; i >= 0; i--) { G.pulls[i].t += dt; if (G.pulls[i].t > 0.25) G.pulls.splice(i, 1); }
       G.shake = Math.max(0, G.shake - dt);
       G.cat.moodT -= dt;
       if (G.cat.moodT <= 0) G.cat.mood = 'idle';
@@ -1882,17 +2573,37 @@
     }
   }
 
+  function lerpState(s, a) {
+    const saved = [];
+    const lerp = (o, kx, ky) => {
+      if (o.px === undefined) return;
+      saved.push([o, o.x, o.y]);
+      o.x = o.px + (o.x - o.px) * a;
+      if (ky && o.py !== undefined) o.y = o.py + (o.y - o.py) * a;
+    };
+    lerp(s.p, true, true);
+    for (const e of s.en) if (e.alive) lerp(e, true, true);
+    if (s.boss) lerp(s.boss, true, false);
+    return () => { for (const [o, x, y] of saved) { o.x = x; o.y = y; } };
+  }
+
   function render() {
     const k = scale * dpr;
     ctx.setTransform(k, 0, 0, k, 0, 0);
     ctx.imageSmoothingQuality = 'high';
     drawBackground(G.camX);
+    // 章末关卡换成黄昏 / 夜色调（只染背景，不影响前景可读性）
+    if (G.mode !== 'title' && G.L.tint) { ctx.fillStyle = G.L.tint; ctx.fillRect(0, 0, W, VH); }
     const inGame = G.mode !== 'title';
     const sh = G.shake > 0 ? Math.sin(G.time * 90) * 6 * (G.shake / 0.35) : 0;
+    // 渲染插值：物理 120Hz 与屏幕刷新不同步时，按剩余时间比例取两步之间的位置，消除一顿一顿的抖动
+    const restore = inGame && G.s && (G.mode === 'play' || G.mode === 'clear') ? lerpState(G.s, Math.min(1, G.acc / DT)) : null;
+    if (restore) G.camX = Math.max(0, G.s.p.x - W * 0.3);
     ctx.save();
     ctx.translate(-Math.round(G.camX * k) / k + sh, sh * 0.5);
     drawWorld(G.L, inGame ? G.s : null);
     ctx.restore();
+    if (restore) restore();
     if (!inGame || !G.s) return;
     if (G.flash > 0) {
       ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(0.85, G.flash * 2)})`;
@@ -1917,14 +2628,18 @@
     root.ev = null;
     const D = 6, H = 160, LIMIT = opt.limit || 300000;
     const goalN = (name) => (L.goals.find((g) => g[0] === name) || [])[1] || 0;
+    const hasFly = L.enemies.some((e) => e.type === 'fly' || e.type === 'hopper') || L.plats.some((pl) => pl.mv);
     const needCombo = opt.combo ? goalN('combo') : 0, needStars = opt.stars ? goalN('stars') : 0;
     const ok = (s) => s.finished && s.maxCombo >= needCombo && s.stars >= needStars;
-    const bad = (s) => s.dead || s.hurts > 0 || s.doorFails > 0 || (s.finished && !ok(s));
+    const bad = (s) => s.dead || s.hurts > 0 || s.doorFails > 0 || s.seqFails > 0 || (s.finished && !ok(s));
     const key = (s) => {
       const p = s.p;
       let k = `${Math.round(p.x / 4)},${Math.round(p.y / 4)},${Math.round(p.vy / 30)},${p.air},${p.onGround ? 1 : 0},${p.stompT > 0 ? 1 : 0},${s.cat.phase}`;
       for (const e of s.en) k += e.alive ? '1' : '0';
-      k += `|${s.seals.join('')}${s.doorDone.join('')}`;
+      k += `|${s.seals.join('')}${s.doorDone.join('')}|${Array.from(s.crumble, (v) => (v ? Math.ceil(v * 5) : 0)).join('')}`;
+      for (const w of s.waves) k += `,w${Math.round(w.x / 4)}`;
+      k += `|${s.ride},${s.bub},${Math.round(s.bubT * 10)},${Array.from(s.bubCD, (v) => (v ? Math.ceil(v * 2) : 0)).join('')},${s.seqLit.join('')}${s.seqDone.join('')}`;
+      if (hasFly) k += `,t${Math.round(s.t * 10)}`; // 飞飞怪、跳跳小丑、移动平台的位置只由时间决定
       if (s.boss) {
         const b = s.boss;
         k += `|${b.state},${b.hp},${Math.round(b.x / 4)},${b.spawnLeft},${Math.round(b.t * 10)}`;
@@ -1980,13 +2695,26 @@
     return { ok: !!taps, nodes, result, taps };
   }
   // 调试：不依赖 requestAnimationFrame 手动快进（页面在后台时用于截图验证）
-  function tick(sec) { for (let t = 0; t < sec; t += 1 / 60) update(1 / 60); render(); return G.mode; }
+  function tick(sec) {
+    const t0 = performance.now();
+    for (let t = 0; t < sec; t += 1 / 60) update(1 / 60);
+    const t1 = performance.now();
+    render();
+    G.prof = { update: t1 - t0, render: performance.now() - t1 };
+    return G.mode;
+  }
   window.__mmq = { solve, autoplay: (i, taps) => startLevel(i, taps), tick, G, LEVELS, CFG, step, newRun, jumpCue };
 
   // ===== 启动 =====
   syncSoundLabels();
   resize();
-  const fontReady = document.fonts && document.fonts.load ? document.fonts.load(`20px "ZCOOL KuaiLe"`, '魔法连击终点0123') : Promise.resolve();
+  // 中文网络字体按字分片加载：启动时把脚本里出现的所有汉字一次加载完，避免游戏中途临时下载
+  const ALL_CHARS = [...new Set((SCRIPT_TEXT.match(/[　-鿿＀-￯]/g) || []))].join('') + '0123456789×+/!';
+  const fontReady = document.fonts && document.fonts.load ? document.fonts.load(`20px "ZCOOL KuaiLe"`, ALL_CHARS).catch(() => {}) : Promise.resolve();
+  // 字体晚到时，丢掉用备用字体画好的文字位图
+  if (document.fonts && document.fonts.addEventListener) {
+    document.fonts.addEventListener('loadingdone', () => { textCache.clear(); if (G.mode !== 'title' && G.L) prewarmLevel(G.L); });
+  }
   Promise.race([Promise.all([assetsReady, fontReady]), new Promise((r) => setTimeout(r, 4000))]).then(() => {
     requestAnimationFrame((t) => { last = t; frame(t); });
   });
