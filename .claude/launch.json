@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "demo",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["art/tools/serve.py", "8765", "demo"],
+      "port": 8765
+    }
+  ]
+}
