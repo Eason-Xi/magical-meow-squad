@@ -123,9 +123,9 @@
   @keyframes bob { 50% { transform: translateY(-10px); } }
 
   /* 选关 */
-  .select { width: min(760px, 100%); display: flex; flex-direction: column; gap: clamp(8px, 2.4vh, 16px); }
+  .select { width: min(940px, 100%); display: flex; flex-direction: column; gap: clamp(8px, 2.4vh, 16px); }
   .select header { display: flex; align-items: baseline; justify-content: center; gap: 12px; }
-  .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(8px, 2vw, 16px); }
+  .cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: clamp(6px, 1.4vw, 14px); }
   .card {
     font: inherit; color: var(--plum); cursor: pointer;
     background: #fff; border: 3px solid #ffd3e2; border-radius: 22px;
@@ -178,7 +178,7 @@
     .stats dt { font-size: 11px; }
   }
   @media (max-width: 560px) {
-    .cards { grid-template-columns: 1fr; }
+    .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .result-body { grid-template-columns: 1fr; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -199,7 +199,7 @@
         <button id="btnStart" class="btn">开始冒险</button>
         <button id="btnSelect" class="btn mint">选关</button>
       </div>
-      <p class="fine">试玩版 · 第 1 章「糖果森林」前 3 关 · 点屏幕或按空格跳跃</p>
+      <p class="fine">MVP 试玩版 · 第 1 章「糖果森林」全 5 关 · 点屏幕或按空格跳跃</p>
     </div>
     <div class="title-art">
       <img id="artGirl" src="assets/sprites/win.png" alt="">
@@ -307,7 +307,7 @@
 
   const LEVEL_DEFS = [
     {
-      code: '1-1', name: '初次起飞', tag: '点击跳跃', goals: { combo: 3, stars: 8 }, finish: 6000,
+      code: '1-1', name: '初次起飞', tag: '点击跳跃', goals: [['combo', 3], ['stars', 8]], finish: 6000,
       solids: [[0, 760, 440], [760, 1500, 396], [1500, 2800, 440], [2900, 4560, 440], [4560, 5000, 400], [5110, 6700, 440]],
       plats: [[3150, 110, 360], [3330, 110, 300]],
       springs: [],
@@ -319,7 +319,7 @@
         [2580, 2790, '前面有坑，点一下跳过去'], [3040, 3330, '跳上马卡龙，拿高处的星星'], [5300, 5480, '踩怪的瞬间再点一下，弹得更高！']],
     },
     {
-      code: '1-2', name: '云朵接力', tag: '二段跳', goals: { combo: 5, stars: 12 }, finish: 6150,
+      code: '1-2', name: '云朵接力', tag: '二段跳', goals: [['combo', 5], ['noHurt']], finish: 6150,
       solids: [[0, 600, 440], [700, 1300, 440], [1530, 2200, 440], [2200, 2700, 300], [2700, 3800, 440],
         [3000, 3060, 400], [3155, 3215, 360], [3307, 3367, 320], [3920, 5200, 440], [5420, 6800, 440]],
       plats: [[4300, 100, 400], [4455, 100, 360], [4607, 100, 320]],
@@ -334,7 +334,7 @@
         [5080, 5200, '宽坑，记得二段跳']],
     },
     {
-      code: '1-3', name: '猫咪的秘密', tag: '伙伴机关', goals: { combo: 4, stars: 12 }, finish: 4700,
+      code: '1-3', name: '猫咪的秘密', tag: '伙伴机关', goals: [['combo', 4], ['stars', 12]], finish: 4700,
       solids: [[0, 900, 440], [900, 1250, 400], [1250, 1700, 440], [2020, 3500, 440], [3620, 5300, 440]],
       plats: [[3050, 110, 360]],
       springs: [],
@@ -345,20 +345,63 @@
         [3080, 322], [3130, 322], ...arc(3490, 140, 3, 410, 80), ...line(3720, 410, 4, 46), ...arc(4420, 150, 3, 410, 80)],
       hints: [[0, 500, '这一关要和猫咪合作哦'], [1300, 1640, '前面的坑太宽了，先停一下…'], [2120, 2330, '桥搭好了，冲呀！']],
     },
+    {
+      // 门的选择 = 是否跳上门前的糖果台；选错回到减速区起点，不会软锁
+      code: '1-4', name: '真假糖果门', tag: '观察选择', goals: [['doorFirst'], ['combo', 6]], finish: 5900,
+      solids: [[0, 900, 440], [1010, 6600, 440]],
+      plats: [[1660, 216, 360], [2934, 100, 400], [3086, 100, 360], [3238, 100, 320], [4260, 216, 360]],
+      springs: [],
+      slow: [[1350, 1900, 0.55], [3950, 4500, 0.55]],
+      doors: [
+        { x: 1900, signX: 1440, up: 'heart', down: 'star', correct: 'up', respawnX: 1250 },
+        { x: 4500, signX: 4040, up: 'star', down: 'moon', correct: 'down', respawnX: 3850 },
+      ],
+      enemies: [['jelly', 520], ['jelly', 686], ['jelly', 2500], ['jelly', 2666], ['jelly', 2832],
+        ['jelly', 2984, 400], ['jelly', 3136, 360], ['jelly', 3288, 320],
+        ['pudding', 3650, 440, [3560, 3740]], ['jelly', 4900], ['jelly', 5066], ['pudding', 5400, 440, [5320, 5480]]],
+      stars: [...arc(890, 140, 3, 410, 75), ...line(1700, 322, 4, 48), ...line(2100, 410, 4, 46),
+        [3067, 212], [3219, 172], [3371, 132], ...arc(4880, 200, 4, 380, 60), ...line(5560, 410, 4, 46)],
+      hints: [[0, 420, '这一关要看清路牌，选对门'], [1150, 1440, '路牌上的图案 = 正确的门'],
+        [1660, 1900, '上面的门跳上去，下面的门直接走'], [2250, 2480, '连踩 6 只怪就能拿三星'], [3950, 4260, '这次路牌上是什么图案？']],
+    },
+    {
+      // 复习：二段跳大坑 → 踩★怪解封印 → 8 连踩 → 猫咪搭桥 → 布丁王首领战（站定迎击，3 次踩踏）
+      code: '1-5', name: '星光大反击', tag: '小首领', goals: [['combo', 8], ['energy', 80]], finish: null,
+      solids: [[0, 800, 440], [1030, 4600, 440], [4920, 7200, 440]],
+      plats: [[3300, 100, 400], [3452, 100, 360], [3604, 100, 320], [3756, 100, 280]],
+      springs: [],
+      seals: [[2330, 150]],
+      enemies: [['jelly', 560], ['pudding', 1450, 440, [1360, 1540]],
+        ['jelly', 2000, 440, [1950, 2300], { seal: 0, speed: 55 }],
+        ['jelly', 2700], ['jelly', 2866], ['jelly', 3032], ['jelly', 3198],
+        ['jelly', 3350, 400], ['jelly', 3502, 360], ['jelly', 3654, 320], ['jelly', 3806, 280]],
+      cat: { stopX: 4540, ventX: 4572, btnX: 4965, bridge: [4600, 320, 440] },
+      boss: { stopX: 5700, homeOff: 430, speeds: [75, 95, 110], minions: [0, 1, 2] },
+      stars: [...arc(790, 250, 4, 410, 150), ...line(1150, 410, 3, 46), ...line(2420, 410, 4, 46),
+        [3433, 212], [3585, 172], [3737, 132], [3889, 92], ...line(4660, 410, 5, 55), ...line(5100, 410, 4, 46)],
+      hints: [[0, 520, '最终关！学过的本领全部用上'], [600, 800, '大坑：记得二段跳'],
+        [1700, 2330, '踩倒头顶有★的怪物，解开封印！'], [2450, 2690, '一路连踩 8 只，冲击三星！'],
+        [4300, 4540, '又到猫咪出场了～'], [5300, 5700, '布丁王就在前面…准备好了吗？']],
+    },
   ];
+  const DOOR_LEDGE = 360;
 
   function buildLevel(d, i) {
     const L = { ...d, idx: i };
     L.solids = d.solids.map(([x0, x1, y], k) => ({ x: x0, y, w: x1 - x0, h: VH + 80 - y, seed: k * 17 + i * 101 }));
     L.plats = d.plats.map(([x, w, y]) => ({ x, y, w }));
     L.springs = d.springs.map(([cx, sy]) => ({ x: cx - 22, y: sy - 16, w: 44, h: 16 }));
-    L.enemies = d.enemies.map(([type, cx, sy = GY, patrol]) => {
+    L.enemies = d.enemies.map(([type, cx, sy = GY, patrol, opt = {}]) => {
       const [w, h] = ENEMY_SIZE[type];
-      const e = { type, x: cx - w / 2, y: sy - h, w, h, vx: 0, x0: 0, x1: 0 };
-      if (patrol) { e.vx = -35; e.x0 = patrol[0] - w / 2; e.x1 = patrol[1] - w / 2; }
+      const e = { type, x: cx - w / 2, y: sy - h, w, h, vx: 0, x0: 0, x1: 0, patrol: false, seal: opt.seal ?? -1, minion: false };
+      if (patrol) { e.patrol = true; e.vx = -(opt.speed || 35); e.x0 = patrol[0] - w / 2; e.x1 = patrol[1] - w / 2; }
       return e;
     });
     L.stars = d.stars.map(([x, y]) => ({ x, y }));
+    L.slow = d.slow || [];
+    L.doors = d.doors || [];
+    L.seals = (d.seals || []).map(([x, y]) => ({ x, y, w: 28, h: VH + 80 - y }));
+    L.boss = d.boss ? { ...d.boss, home: d.boss.stopX + d.boss.homeOff } : null;
     if (d.cat) {
       const [bx, bw, by] = d.cat.bridge;
       L.cat = { ...d.cat, bridge: { x: bx, w: bw, y: by } };
@@ -378,11 +421,97 @@
       springT: L.springs.map(() => 9),
       combo: 0, comboT: 0, maxCombo: 0, score: 0, energy: 0, stars: 0, stomps: 0, hurts: 0, perfects: 0,
       cat: { phase: L.cat ? 'idle' : 'none', t: 0 },
+      doorDone: new Uint8Array(L.doors.length), doorFailsBy: new Uint8Array(L.doors.length), doorFails: 0,
+      seals: new Uint8Array(L.seals.length),
+      boss: L.boss ? { state: 'idle', t: 0, hp: 3, phase: 1, x: L.boss.home - 40, y: GY - 62, w: 80, h: 62, spawnLeft: 0 } : null,
       easy: !!easy, dead: false, cause: '', finished: false, ev: [],
     };
   }
   function cloneRun(s) {
-    return { ...s, p: { ...s.p }, en: s.en.map((e) => ({ ...e })), got: s.got.slice(), springT: s.springT.slice(), cat: { ...s.cat }, ev: null };
+    return {
+      ...s, p: { ...s.p }, en: s.en.map((e) => ({ ...e })), got: s.got.slice(), springT: s.springT.slice(), cat: { ...s.cat },
+      doorDone: s.doorDone.slice(), doorFailsBy: s.doorFailsBy.slice(), seals: s.seals.slice(), boss: s.boss ? { ...s.boss } : null, ev: null,
+    };
+  }
+
+  // 踩踏成功后的弹起、连击与计分（普通怪与首领共用）
+  function stompBounce(s, e, base, energy) {
+    const p = s.p;
+    const perfect = p.buf > 0;
+    p.vy = -CFG.bounceV * (perfect ? CFG.perfectMul : 1);
+    p.y = e.y - p.h;
+    p.buf = 0;
+    p.stompT = perfect ? 0 : CFG.perfectWindow;
+    p.onGround = false;
+    p.air = Math.max(p.air, CFG.bounceRestore);
+    s.combo = s.comboT > 0 ? s.combo + 1 : 1;
+    s.comboT = CFG.comboWindow;
+    s.maxCombo = Math.max(s.maxCombo, s.combo);
+    s.stomps++;
+    let sc = base, en = energy;
+    const bonus = COMBO_BONUS[s.combo];
+    if (bonus) { sc += bonus[0]; en += bonus[1]; }
+    if (perfect) { sc += 50; s.perfects++; }
+    s.score += sc;
+    s.energy += en;
+    return { perfect, bonus: !!bonus };
+  }
+  function hurtPlayer(s, cause) {
+    const p = s.p;
+    p.hp--; p.inv = CFG.invuln; s.hurts++;
+    if (s.combo > 1) emit(s, 'comboEnd', { combo: s.combo });
+    s.combo = 0; s.comboT = 0;
+    emit(s, 'hurt', { x: p.x + p.w / 2, y: p.y + p.h / 2 });
+    if (p.hp <= 0) { s.dead = true; s.cause = cause; }
+  }
+
+  // 布丁王：出场 → 放小怪 → 走向主角 →（被踩）击退、生气、进入下一阶段；走过头就跳回原位重来
+  function bossStep(L, s, prevBottom, tol) {
+    const b = s.boss, B = L.boss, p = s.p, home = B.home - b.w / 2;
+    b.t += DT;
+    switch (b.state) {
+      case 'intro':
+        if (b.t >= 1.4) { b.state = 'spawn'; b.t = 0; b.spawnLeft = B.minions[b.phase - 1]; }
+        break;
+      case 'spawn':
+        if (b.spawnLeft > 0 && b.t >= 0.9) {
+          s.en.push({ type: 'jelly', x: b.x - 20, y: GY - 36, w: 44, h: 36, vx: -78, x0: 0, x1: 0, patrol: false, seal: -1, minion: true, alive: true });
+          b.spawnLeft--; b.t = 0;
+          emit(s, 'minion', { x: b.x, y: b.y });
+        } else if (b.spawnLeft === 0 && b.t >= 0.9) { b.state = 'walk'; b.t = 0; }
+        break;
+      case 'walk':
+        b.x -= B.speeds[b.phase - 1] * DT;
+        if (b.x + b.w < B.stopX - p.w - 240) { b.state = 'return'; b.t = 0; }
+        break;
+      case 'return':
+        b.x += 190 * DT;
+        if (b.x >= home) { b.x = home; b.state = 'spawn'; b.t = 0; b.spawnLeft = 0; }
+        break;
+      case 'hit':
+        b.x = Math.min(home + 40, b.x + 330 * DT);
+        if (b.t >= 0.6) { b.state = 'angry'; b.t = 0; emit(s, 'bossAngry', { x: b.x + b.w / 2, y: b.y }); }
+        break;
+      case 'angry':
+        if (b.t >= 1.0) { b.phase++; b.state = 'spawn'; b.t = 0; b.spawnLeft = B.minions[b.phase - 1]; }
+        break;
+      case 'down':
+        if (b.t >= 0.9) { b.state = 'gone'; s.finished = true; emit(s, 'finish'); }
+        break;
+      default: break;
+    }
+    // 跳回原位（return）时从主角头顶越过，不造成伤害
+    if (b.state === 'walk' && hit(p, b)) {
+      if (p.vy > 0 && prevBottom <= b.y + tol + 4) {
+        b.hp--;
+        const r = stompBounce(s, b, 500, 20);
+        b.state = b.hp > 0 ? 'hit' : 'down';
+        b.t = 0;
+        emit(s, 'bossHit', { x: b.x + b.w / 2, y: b.y, hp: b.hp, combo: s.combo, perfect: r.perfect });
+      } else if (p.inv <= 0) {
+        hurtPlayer(s, 'boss');
+      }
+    }
   }
   const emit = (s, k, a) => { if (s.ev) s.ev.push({ k, ...a }); };
   const hit = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y + 0.01;
@@ -394,8 +523,19 @@
     s.t += DT;
     if (tap && !s.finished) p.buf = CFG.buffer;
 
-    // 猫咪机关：到达停驻点后原地等待，猫咪钻洞按开关、桥梁展开
     let speed = s.finished ? 0 : CFG.runSpeed;
+    // 减速区：解谜前留出观察时间
+    const pcx = p.x + p.w / 2;
+    for (const [a, b, f] of L.slow) if (pcx >= a && pcx <= b) speed *= f;
+    // 首领战：进入擂台后站定迎击，并补满体力
+    if (s.boss) {
+      if (s.boss.state === 'idle' && p.x + p.w >= L.boss.stopX) {
+        s.boss.state = 'intro'; s.boss.t = 0; p.hp = CFG.hp;
+        emit(s, 'bossIntro');
+      }
+      if (s.boss.state !== 'idle') speed = 0;
+    }
+    // 猫咪机关：到达停驻点后原地等待，猫咪钻洞按开关、桥梁展开
     if (L.cat) {
       const c = s.cat;
       if (c.phase === 'idle' && p.x + p.w >= L.cat.stopX) { c.phase = 'go'; c.t = 0; emit(s, 'cat_go'); }
@@ -427,17 +567,25 @@
 
     p.vy = Math.min(p.vy + CFG.gravity * DT, CFG.maxFall);
 
+    // 未解除的封印与地块一样是实心墙
+    let walls = L.solids;
+    if (L.seals.length) {
+      const closed = L.seals.filter((_, i) => !s.seals[i]);
+      if (closed.length) walls = L.solids.concat(closed);
+    }
+
     // 水平：撞墙则贴住（自动奔跑被台阶挡住，需要跳上去）
+    const prevCx = p.x + p.w / 2;
     p.x += speed * DT;
     p.blocked = false;
-    for (const b of L.solids) if (hit(p, b)) { p.x = b.x - p.w; p.blocked = true; }
+    for (const b of walls) if (hit(p, b)) { p.x = b.x - p.w; p.blocked = true; }
 
     // 垂直
     const prevBottom = p.y + p.h;
     const wasGround = p.onGround;
     p.y += p.vy * DT;
     p.onGround = false;
-    for (const b of L.solids) {
+    for (const b of walls) {
       if (!hit(p, b)) continue;
       if (prevBottom <= b.y + 0.5) { p.y = b.y - p.h; p.vy = 0; p.onGround = true; }
       else if (p.vy < 0) { p.y = b.y + b.h; p.vy = 0; }
@@ -464,42 +612,48 @@
     else p.coyote = Math.max(0, p.coyote - DT);
 
     if (!s.finished) {
+      // 真假门：主角中心越过门线时，脚在糖果台高度 = 走上门，否则 = 走下门
+      for (let i = 0; i < L.doors.length; i++) {
+        const d = L.doors[i];
+        if (s.doorDone[i] || prevCx >= d.x || p.x + p.w / 2 < d.x) continue;
+        const choice = p.y + p.h <= DOOR_LEDGE + 30 ? 'up' : 'down';
+        if (choice === d.correct) {
+          s.doorDone[i] = 1;
+          s.score += 200; s.energy += 20;
+          emit(s, 'doorOk', { i, choice });
+        } else {
+          s.doorFails++; s.doorFailsBy[i]++;
+          p.x = d.respawnX; p.y = GY - p.h; p.vy = 0; p.onGround = true; p.air = 1; p.buf = 0; p.stompT = 0; p.coyote = 0;
+          if (s.combo > 1) emit(s, 'comboEnd', { combo: s.combo });
+          s.combo = 0; s.comboT = 0;
+          emit(s, 'doorWrong', { i, choice, n: s.doorFailsBy[i] });
+        }
+      }
+
       // 怪物：下落中且脚底来自上方 = 踩踏；否则侧面受击
       const tol = s.easy ? CFG.stompTolEasy : CFG.stompTol;
       for (const e of s.en) {
         if (!e.alive) continue;
         if (e.vx) {
           e.x += e.vx * DT;
-          if (e.x < e.x0) { e.x = e.x0; e.vx = -e.vx; } else if (e.x > e.x1) { e.x = e.x1; e.vx = -e.vx; }
+          if (e.patrol) {
+            if (e.x < e.x0) { e.x = e.x0; e.vx = -e.vx; } else if (e.x > e.x1) { e.x = e.x1; e.vx = -e.vx; }
+          } else if (e.minion && e.x + e.w < L.boss.stopX - 480) { e.alive = false; continue; }
         }
         if (!hit(p, e)) continue;
         if (p.vy > 0 && prevBottom <= e.y + tol) {
           e.alive = false;
-          const perfect = p.buf > 0;
-          p.vy = -CFG.bounceV * (perfect ? CFG.perfectMul : 1);
-          p.y = e.y - p.h;
-          p.buf = 0;
-          p.stompT = perfect ? 0 : CFG.perfectWindow;
-          p.onGround = false;
-          p.air = Math.max(p.air, CFG.bounceRestore);
-          s.combo = s.comboT > 0 ? s.combo + 1 : 1;
-          s.comboT = CFG.comboWindow;
-          s.maxCombo = Math.max(s.maxCombo, s.combo);
-          s.stomps++;
-          let sc = 100, en = 10;
-          const bonus = COMBO_BONUS[s.combo];
-          if (bonus) { sc += bonus[0]; en += bonus[1]; }
-          if (perfect) { sc += 50; s.perfects++; }
-          s.score += sc;
-          s.energy += en;
-          emit(s, 'stomp', { x: e.x + e.w / 2, y: e.y, type: e.type, combo: s.combo, perfect, bonus: !!bonus, first: s.stomps === 1 });
+          const r = stompBounce(s, e, 100, 10);
+          emit(s, 'stomp', { x: e.x + e.w / 2, y: e.y, type: e.type, combo: s.combo, perfect: r.perfect, bonus: r.bonus, first: s.stomps === 1 });
+          if (e.seal >= 0 && !s.seals[e.seal]) { s.seals[e.seal] = 1; emit(s, 'sealOpen', { i: e.seal }); }
         } else if (p.inv <= 0) {
-          p.hp--; p.inv = CFG.invuln; s.hurts++;
-          if (s.combo > 1) emit(s, 'comboEnd', { combo: s.combo });
-          s.combo = 0; s.comboT = 0;
-          emit(s, 'hurt', { x: p.x + p.w / 2, y: p.y + p.h / 2 });
-          if (p.hp <= 0) { s.dead = true; s.cause = 'enemy'; return; }
+          hurtPlayer(s, 'enemy');
+          if (s.dead) return;
         }
+      }
+      if (s.boss && s.boss.state !== 'idle') {
+        bossStep(L, s, prevBottom, tol);
+        if (s.dead) return;
       }
       // 连击窗口
       if (s.comboT > 0) {
@@ -521,13 +675,13 @@
         }
       }
       if (p.y > VH + 40) { s.dead = true; s.cause = 'pit'; return; }
-      if (p.x + p.w / 2 >= L.finish) { s.finished = true; emit(s, 'finish'); }
+      if (L.finish && !s.finished && p.x + p.w / 2 >= L.finish) { s.finished = true; emit(s, 'finish'); }
     }
   }
 
   // ===== 素材 =====
   const IMG = {};
-  const SPRITES = ['run1', 'run2', 'run3', 'run4', 'jump', 'fall', 'hurt', 'win', 'jelly', 'pudding', 'king', 'cat_idle', 'cat_cheer', 'cat_worry'];
+  const SPRITES = ['run1', 'run2', 'run3', 'run4', 'run5', 'run6', 'jump', 'fall', 'hurt', 'win', 'jelly', 'pudding', 'king', 'cat_idle', 'cat_cheer', 'cat_worry'];
   function loadImg(name, src) {
     return new Promise((res) => {
       const im = new Image();
@@ -612,6 +766,12 @@
         case 'magic': for (let i = 0; i < 14; i++) this.tone(1200 + ((i * 377) % 1400), 0.3, { at: i * 0.05, vol: 0.03 + a * 0.008 }); break;
         case 'pop': this.tone(660 * 2 ** (a / 12), 0.12, { type: 'triangle', vol: 0.08 }); this.tone(1980 * 2 ** (a / 12), 0.08, { at: 0.03, vol: 0.04 }); break;
         case 'count': this.tone(a ? 1046 : 784, 0.12, { type: 'square', vol: 0.05 }); break;
+        case 'door': [0, 4, 7, 12, 16].forEach((n, i) => this.tone(659 * 2 ** (n / 12), 0.14, { at: i * 0.06, type: 'triangle', vol: 0.08 })); break;
+        case 'wrong': this.tone(300, 0.18, { to: 220, type: 'square', vol: 0.05 }); this.tone(240, 0.26, { at: 0.16, to: 150, type: 'square', vol: 0.05 }); break;
+        case 'seal': for (let i = 0; i < 8; i++) this.tone(880 + i * 160, 0.18, { at: i * 0.04, vol: 0.05 }); this.tone(220, 0.4, { to: 110, vol: 0.12 }); break;
+        case 'boss': [0, 3, 0, 3, 7].forEach((n, i) => this.tone(196 * 2 ** (n / 12), 0.2, { at: i * 0.14, type: 'sawtooth', vol: 0.05 })); break;
+        case 'bossHit': this.tone(160, 0.25, { to: 50, vol: 0.25 }); this.tone(988, 0.2, { at: 0.05, type: 'square', vol: 0.06 }); break;
+        case 'minion': this.tone(520, 0.1, { to: 330, type: 'triangle', vol: 0.06 }); break;
         default: break;
       }
     },
@@ -668,7 +828,7 @@
     fxW: [], fxS: [], pops: [],
     sqx: 1, sqy: 1, runAnim: 0, dieT: 0, dieVy: 0, dieY: 0,
     cat: { x: 20, y: 300, mood: 'idle', moodT: 0, fromX: 0, fromY: 0, bubble: '', bubbleT: 0 },
-    comboPop: 0, lastCombo: 0, clear: null, countdown: 0, prevX: 0,
+    comboPop: 0, lastCombo: 0, clear: null, countdown: 0, prevX: 0, flash: 0, shake: 0, idleT: 0,
   };
 
   // ===== 画图工具 =====
@@ -946,6 +1106,47 @@
         case 'cat_press': Snd.sfx('button'); break;
         case 'cat_bridge': Snd.sfx('bridge'); G.cat.mood = 'cheer'; G.cat.moodT = 1.4; break;
         case 'cat_back': G.cat.fromX = G.L.cat.btnX; G.cat.fromY = GY - 40; G.cat.bubble = '桥好啦！'; G.cat.bubbleT = 1; break;
+        case 'doorOk': {
+          const d = G.L.doors[e.i];
+          Snd.sfx('door');
+          burst(G.fxW, d.x, e.choice === 'up' ? DOOR_LEDGE - 40 : GY - 40, 18, { kind: 'star', speed: 240, size: 7, colors: STAR_COLORS, life: 0.8 });
+          popup(d.x, e.choice === 'up' ? DOOR_LEDGE - 100 : GY - 110, '选对啦！', { size: 26, stroke: '#2f9c7d' });
+          G.cat.mood = 'cheer'; G.cat.moodT = 1.4;
+          break;
+        }
+        case 'doorWrong': {
+          const d = G.L.doors[e.i];
+          Snd.sfx('wrong');
+          G.flash = 0.45;
+          G.cat.mood = 'worry'; G.cat.moodT = 2;
+          G.cat.x = s.p.x - 38; G.cat.y = s.p.y - 16;
+          G.cat.bubble = e.n >= 2 ? `走${d.correct === 'up' ? '上面' : '下面'}那扇门！` : '不是这扇门喵…再看看路牌！';
+          G.cat.bubbleT = 2.4;
+          break;
+        }
+        case 'sealOpen': {
+          const sl = G.L.seals[e.i];
+          Snd.sfx('seal');
+          for (let y = sl.y + 20; y < GY; y += 40) burst(G.fxW, sl.x + 14, y, 5, { kind: 'star', speed: 200, size: 6, colors: ['#c7b3ff', '#fff', '#ffd54a'], life: 0.8 });
+          popup(sl.x, sl.y + 40, '封印解除！', { size: 26, stroke: '#7a4fd0' });
+          break;
+        }
+        case 'bossIntro':
+          Snd.sfx('boss');
+          G.cat.bubble = '小心！是捣蛋布丁王！'; G.cat.bubbleT = 1.6;
+          popup(s.p.x + s.p.w / 2, s.p.y - 30, '体力补满', { size: 18, stroke: '#2f9c7d' });
+          break;
+        case 'minion': Snd.sfx('minion'); break;
+        case 'bossHit':
+          Snd.sfx('bossHit');
+          G.shake = 0.35;
+          burst(G.fxW, e.x, e.y + 10, 26, { kind: 'star', speed: 320, size: 9, colors: STAR_COLORS, life: 0.9 });
+          popup(e.x, e.y - 40, e.hp > 0 ? `命中！还剩 ${e.hp} 下` : '打倒布丁王！', { size: 26, stroke: '#7a4fd0' });
+          if (e.combo >= 2) popup(e.x, e.y - 72, `${e.combo} 连击！`, { size: 20 });
+          G.cat.mood = 'cheer'; G.cat.moodT = 1.2;
+          G.comboPop = 1;
+          break;
+        case 'bossAngry': popup(e.x, e.y - 30, '生气了！', { size: 22, stroke: '#b8325f' }); Snd.sfx('minion'); break;
         case 'finish': break;
         default: break;
       }
@@ -960,7 +1161,9 @@
     if (s.finished) return p.onGround ? 'win' : 'fall';
     if (p.inv > CFG.invuln - 0.35) return 'hurt';
     if (!p.onGround) return p.vy < -60 ? 'jump' : 'fall';
-    return 'run' + (1 + (Math.floor(G.runAnim * 11) % 4));
+    // 原地等待（猫咪机关、首领战、被墙挡住）用站姿，奔跑时播 6 帧循环（约 2.2 圈/秒）
+    if (G.idleT > 0.08) return 'fall';
+    return 'run' + (1 + (Math.floor(G.runAnim * 13) % 6));
   }
   function catPose(s) {
     // 机关演出期间猫咪的位置由阶段决定，其余时间跟随主角
@@ -982,6 +1185,128 @@
     return null;
   }
 
+  // 门、路牌、减速区、封印、首领
+  function drawIcon(kind, x, y, r) {
+    if (kind === 'heart') {
+      heartPath(ctx, x, y + r * 0.2, r * 0.95);
+      ctx.fillStyle = '#ff5d8f'; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = '#b8325f'; ctx.stroke();
+    } else if (kind === 'star') {
+      drawStar(ctx, x, y, r);
+    } else {
+      // 月牙：外圆大弧 + 内圆反向弧
+      ctx.beginPath();
+      ctx.arc(x, y, r, -0.915, 0.915, true);
+      ctx.arc(x + 0.5 * r, y, 0.8 * r, 1.433, -1.433, false);
+      ctx.closePath();
+      ctx.fillStyle = '#ffd54a'; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = '#d98a00'; ctx.stroke();
+    }
+  }
+  function drawDoorTower(d, s, i) {
+    const cx = d.x, w = 64, top = 236, x = cx - w / 2;
+    const done = s && s.doorDone[i], fails = s ? s.doorFailsBy[i] : 0;
+    ctx.lineWidth = 3; ctx.strokeStyle = '#a84a70';
+    ctx.fillStyle = '#ffe3ee';
+    rr(ctx, x - 6, top, w + 12, GY - top + 4, [14, 14, 0, 0]); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - 16, top + 6); ctx.lineTo(cx, top - 44); ctx.lineTo(x + w + 16, top + 6); ctx.closePath();
+    ctx.fillStyle = '#ff9ec0'; ctx.fill(); ctx.stroke();
+    drawStar(ctx, cx, top - 50, 10);
+    for (const [which, y0, y1] of [['up', DOOR_LEDGE - 78, DOOR_LEDGE - 2], ['down', GY - 76, GY]]) {
+      const isCorrect = which === d.correct;
+      const glow = !done && fails >= 2 && isCorrect;
+      if (glow) {
+        ctx.fillStyle = `rgba(255, 228, 110, ${0.5 + Math.sin(G.time * 6) * 0.2})`;
+        rr(ctx, x - 2, y0 - 6, w + 4, y1 - y0 + 8, 18); ctx.fill();
+        const ax = x - 34 + Math.sin(G.time * 6) * 6, ay = (y0 + y1) / 2;
+        ctx.fillStyle = '#ff6f9c';
+        ctx.beginPath(); ctx.moveTo(ax, ay - 12); ctx.lineTo(ax + 18, ay); ctx.lineTo(ax, ay + 12); ctx.closePath(); ctx.fill();
+      }
+      ctx.fillStyle = done && isCorrect ? '#fff4c2' : '#7b4a8c';
+      rr(ctx, x + 8, y0, w - 16, y1 - y0, [22, 22, 3, 3]); ctx.fill();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = '#4b2350'; ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx, y0 + 25, 15, 0, Math.PI * 2); ctx.fill();
+      drawIcon(which === 'up' ? d.up : d.down, cx, y0 + 25, 11);
+    }
+  }
+  function drawSign(d) {
+    const x = d.signX, icon = d.correct === 'up' ? d.up : d.down;
+    // 牌面立得比猫咪飞行高度更高，避免被挡住
+    ctx.fillStyle = '#c98a4b'; ctx.fillRect(x - 3, GY - 150, 6, 150);
+    ctx.fillStyle = '#fff6ec'; rr(ctx, x - 40, GY - 222, 80, 72, 12); ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = '#a84a70'; ctx.stroke();
+    text(ctx, '正确的门', x, GY - 206, 14, { fill: '#8a5772', sw: 0 });
+    drawIcon(icon, x, GY - 176, 17);
+  }
+  function drawSlowZone([a, b]) {
+    ctx.fillStyle = 'rgba(111, 211, 181, 0.4)';
+    rr(ctx, a, GY - 5, b - a, 10, 5); ctx.fill();
+    ctx.fillStyle = '#c98a4b'; ctx.fillRect(a - 2, GY - 44, 4, 44);
+    ctx.fillStyle = '#e1f7f0'; rr(ctx, a - 26, GY - 68, 52, 26, 8); ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#2f9c7d'; ctx.stroke();
+    text(ctx, '慢行', a, GY - 54, 14, { fill: '#2f9c7d', sw: 0 });
+  }
+  function drawSeal(sl) {
+    const h = GY - sl.y, cx = sl.x + sl.w / 2, cy = sl.y + h / 2;
+    const g = ctx.createLinearGradient(sl.x, 0, sl.x + sl.w, 0);
+    g.addColorStop(0, 'rgba(169, 139, 232, 0.2)'); g.addColorStop(0.5, 'rgba(199, 179, 255, 0.85)'); g.addColorStop(1, 'rgba(169, 139, 232, 0.2)');
+    ctx.fillStyle = g; rr(ctx, sl.x, sl.y, sl.w, h, 12); ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#7a4fd0'; ctx.stroke();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    for (let k = 0; k < 6; k++) {
+      const y = sl.y + ((k * 52 + G.time * 40) % h);
+      starPath(ctx, cx + Math.sin(k * 2 + G.time * 2) * 6, y, 4, G.time); ctx.fill();
+    }
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx, cy, 20, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#7a4fd0'; ctx.lineWidth = 3; ctx.stroke();
+    drawStar(ctx, cx, cy, 11);
+  }
+  function drawBoss(s) {
+    const b = s.boss;
+    if (!b || b.state === 'idle' || b.state === 'gone') return;
+    let x = b.x + b.w / 2, y = b.y + b.h + 4, sx = 1, sy = 1, alpha = 1, flip = false;
+    const t = b.t;
+    if (b.state === 'intro') {
+      const k = Math.min(1, t / 0.55);
+      y -= (1 - k * k) * 460;
+      if (t > 0.55 && t < 0.85) { const q = Math.sin(((t - 0.55) / 0.3) * Math.PI); sx = 1 + q * 0.25; sy = 1 - q * 0.25; }
+    } else if (b.state === 'walk' || b.state === 'spawn') {
+      sy = 1 + Math.sin(G.time * 12) * 0.04; sx = 2 - sy;
+    } else if (b.state === 'return') {
+      flip = true; y -= Math.abs(Math.sin(t * 4.5)) * 150;
+    } else if (b.state === 'hit') {
+      const q = Math.max(0, 1 - t / 0.3); sx = 1 + q * 0.35; sy = 1 - q * 0.35;
+    } else if (b.state === 'angry') {
+      x += Math.sin(G.time * 70) * 3;
+    } else if (b.state === 'down') {
+      sy = Math.max(0.2, 1 - t); sx = 1 + t * 0.4; alpha = Math.max(0, 1 - t * 0.9);
+    }
+    ctx.fillStyle = 'rgba(90, 40, 30, 0.22)';
+    ctx.beginPath(); ctx.ellipse(b.x + b.w / 2, GY, 46, 7, 0, 0, Math.PI * 2); ctx.fill();
+    sprite('king', x, y, 0.34, { flip, sx, sy, alpha });
+    if (b.state === 'angry') text(ctx, '!!', x + 36, b.y - 18 + Math.sin(G.time * 20) * 3, 30, { fill: '#ff5d5d', stroke: '#fff', sw: 6 });
+  }
+  // 站定时（首领战、被墙挡住）猫咪提示起跳时机：怪物进入"跳起后正好落在它头上"的距离区间
+  function jumpCue(s) {
+    const p = s.p, L = G.L;
+    const fight = s.boss && s.boss.state !== 'idle' && s.boss.state !== 'gone';
+    if (!(fight || p.blocked) || !p.onGround) return null;
+    let best = null;
+    const consider = (o, v) => {
+      const gap = o.x > p.x ? o.x - (p.x + p.w) : p.x - (o.x + o.w);
+      if (gap < 0) return;
+      const disc = Math.sqrt(Math.max(0, CFG.jumpV ** 2 - 2 * CFG.gravity * o.h));
+      const t1 = (CFG.jumpV - disc) / CFG.gravity, t2 = (CFG.jumpV + disc) / CFG.gravity;
+      if (gap >= v * (t1 + 0.03) && gap <= v * (t2 - 0.05) && (!best || gap < best.gap)) best = { x: o.x + o.w / 2, y: o.y, gap };
+    };
+    if (fight && s.boss.state === 'walk') consider(s.boss, L.boss.speeds[s.boss.phase - 1]);
+    for (const e of s.en) {
+      if (!e.alive || !e.vx) continue;
+      if ((e.vx < 0 && e.x > p.x) || (e.vx > 0 && e.x < p.x)) consider(e, Math.abs(e.vx));
+    }
+    return best;
+  }
+
   function drawWorld(L, s) {
     const x0 = G.camX - 80, x1 = G.camX + W + 80, t = G.time;
     if (L.finish > x0 - 100 && L.finish < x1 + 100) drawGoal(L.finish);
@@ -990,6 +1315,12 @@
       const c = solidCanvas(b);
       ctx.drawImage(c, b.x - c.pad, b.y - c.pad, c.lw, c.lh);
     }
+    for (const z of L.slow) if (z[1] > x0 && z[0] < x1) drawSlowZone(z);
+    L.doors.forEach((d, i) => {
+      if (d.signX > x0 - 60 && d.signX < x1 + 60) drawSign(d);
+      if (d.x > x0 - 60 && d.x < x1 + 60) drawDoorTower(d, s, i);
+    });
+    L.seals.forEach((sl, i) => { if ((!s || !s.seals[i]) && sl.x > x0 && sl.x < x1) drawSeal(sl); });
     if (L.cat) {
       const C = L.cat, c = s ? s.cat : { phase: 'idle', t: 0 };
       // 通风洞
@@ -1039,10 +1370,22 @@
       const sq = 1 + Math.sin(t * 6 + e.x * 0.05) * 0.05;
       ctx.fillStyle = 'rgba(90, 40, 30, 0.18)';
       ctx.beginPath(); ctx.ellipse(e.x + e.w / 2, e.y + e.h, e.w * 0.55, 4, 0, 0, Math.PI * 2); ctx.fill();
+      if (e.seal >= 0) {
+        ctx.fillStyle = 'rgba(169, 139, 232, 0.35)';
+        ctx.beginPath(); ctx.ellipse(e.x + e.w / 2, e.y + e.h / 2, 36, 28, 0, 0, Math.PI * 2); ctx.fill();
+      }
       sprite(e.type, e.x + e.w / 2, e.y + e.h + 3, e.type === 'jelly' ? 0.29 : 0.27, { flip: e.vx > 0, sx: 2 - sq, sy: sq });
+      if (e.seal >= 0) drawStar(ctx, e.x + e.w / 2, e.y - 30 + Math.sin(t * 5) * 4, 11, t);
     }
     if (!s) return;
+    drawBoss(s);
     const p = s.p;
+    // 站定迎击时的起跳提示
+    const cue = G.mode === 'play' ? jumpCue(s) : null;
+    if (cue) {
+      text(ctx, '!', cue.x, cue.y - 40 - Math.abs(Math.sin(t * 10)) * 6, 34, { fill: '#ffd54a', stroke: '#b8325f', sw: 6 });
+      G.cat.bubble = '现在跳！'; G.cat.bubbleT = 0.2;
+    }
     // 猫咪
     const pose = catPose(s);
     if (!pose || !pose.hidden) {
@@ -1070,7 +1413,7 @@
       ctx.beginPath(); ctx.ellipse(p.x + p.w / 2, p.y + p.h, 17, 4.5, 0, 0, Math.PI * 2); ctx.fill();
     }
     const flicker = p.inv > 0 && Math.floor(G.time * 18) % 2 ? 0.35 : 1;
-    sprite(key, p.x + p.w / 2, p.y + p.h + 3 + G.dieY, 0.42, { sx: G.sqx, sy: G.sqy, alpha: flicker, dx: key.startsWith('run') ? 4 : 0 });
+    sprite(key, p.x + p.w / 2, p.y + p.h + 3 + G.dieY, 0.42, { sx: G.sqx, sy: G.sqy, alpha: flicker });
     drawFx(G.fxW);
     for (const q of G.pops) {
       const k = q.life / q.max;
@@ -1096,7 +1439,24 @@
     }
     drawStar(ctx, x0 + 132, y0 + 24, 11);
     text(ctx, `${s.stars}`, x0 + 150, y0 + 25, 20, { align: 'left', fill: '#5b2a45', sw: 0 });
-    text(ctx, `/${L.goals.stars}`, x0 + 150 + ctx.measureText(`${s.stars}`).width + 2, y0 + 28, 13, { align: 'left', fill: '#a07f8f', sw: 0 });
+    const starGoal = (L.goals.find((g) => g[0] === 'stars') || [])[1];
+    if (starGoal) text(ctx, `/${starGoal}`, x0 + 150 + ctx.measureText(`${s.stars}`).width + 2, y0 + 28, 13, { align: 'left', fill: '#a07f8f', sw: 0 });
+
+    // 首领血量
+    const b = s.boss;
+    if (b && b.state !== 'idle' && b.state !== 'gone') {
+      const bw = 250, bx = W / 2 - bw / 2, by = VH - 48;
+      ctx.fillStyle = 'rgba(255, 248, 240, 0.94)'; rr(ctx, bx, by, bw, 36, 18); ctx.fill();
+      ctx.strokeStyle = '#ffc2d6'; ctx.lineWidth = 3; ctx.stroke();
+      text(ctx, '捣蛋布丁王', bx + 18, by + 19, 17, { align: 'left', fill: '#5b2a45', sw: 0 });
+      for (let k = 0; k < 3; k++) {
+        const cx = bx + 152 + k * 32, on = k < b.hp;
+        ctx.fillStyle = on ? '#ffc23a' : '#eadbe2';
+        rr(ctx, cx - 11, by + 9, 22, 18, [10, 10, 4, 4]); ctx.fill();
+        ctx.strokeStyle = on ? '#b06d36' : '#d8bcc8'; ctx.lineWidth = 2; ctx.stroke();
+        if (on) { ctx.fillStyle = '#9a5a26'; rr(ctx, cx - 11, by + 9, 22, 6, [10, 10, 0, 0]); ctx.fill(); }
+      }
+    }
 
     // 连击
     if (s.combo >= 2) {
@@ -1141,7 +1501,9 @@
       ctx.globalAlpha = 1;
     }
     let hint = null;
-    for (const [a, b, str] of L.hints) if (p.x >= a && p.x <= b) hint = str;
+    const fight = s.boss && s.boss.state !== 'idle';
+    if (fight) hint = s.boss.phase === 1 && s.boss.state !== 'gone' ? '站稳！等布丁王走近，听猫咪喊“现在跳！”' : null;
+    else for (const [a, b, str] of L.hints) if (p.x >= a && p.x <= b) hint = str;
     if (G.mode === 'play' && G.s.easy && p.x < 1200 && !hint) hint = '落下时踩在怪物头上会弹起来';
     if (hint) {
       ctx.font = `20px ${FONT}`;
@@ -1315,32 +1677,42 @@
     btnPause.hidden = true;
     G.fails[i] = (G.fails[i] || 0) + 1;
     $('#failCode').textContent = `${G.L.code} ${G.L.name}`;
-    $('#failTitle').textContent = s.cause === 'pit' ? '掉进坑里了' : '被怪物撞到了';
-    $('#failTip').textContent = s.cause === 'pit'
-      ? '在坑边点一下起跳；距离不够时，在空中再点一下二段跳。'
-      : '从上方落下、踩在怪物头上就能打倒它；从侧面碰到会受伤。';
+    const FAIL = {
+      pit: ['掉进坑里了', '在坑边点一下起跳；距离不够时，在空中再点一下二段跳。'],
+      enemy: ['被怪物撞到了', '从上方落下、踩在怪物头上就能打倒它；从侧面碰到会受伤。'],
+      boss: ['被布丁王撞到了', '别急着跳：等它走近、猫咪喊“现在跳！”时再起跳，就能落在它头上。'],
+    };
+    const [title, tip] = FAIL[s.cause] || FAIL.enemy;
+    $('#failTitle').textContent = title;
+    $('#failTip').textContent = tip;
     $('#failEasy').hidden = G.fails[i] < 2;
     show('scrFail');
     setTimeout(() => $('#btnRetry').focus({ preventScroll: true }), 50);
   }
 
+  // 三星目标（PRD 6.2：完成 = 1 星，每达成一项挑战 +1 星）
+  const GOALS = {
+    combo: (n, s) => [s.maxCombo >= n, `最高连击 ≥ ${n}（本次 ${s.maxCombo}）`],
+    stars: (n, s) => [s.stars >= n, `收集星星 ≥ ${n}（本次 ${s.stars}）`],
+    energy: (n, s) => [s.energy >= n, `魔法能量 ≥ ${n}（本次 ${Math.floor(s.energy)}）`],
+    noHurt: (n, s) => [s.hurts === 0, `无伤通关（本次受击 ${s.hurts} 次）`],
+    doorFirst: (n, s) => [s.doorFails === 0, `每扇门都一次选对（本次选错 ${s.doorFails} 次）`],
+  };
+  const evalGoals = (L, s) => L.goals.map(([k, n]) => GOALS[k](n, s));
+
   function finishLevel() {
     const s = G.s, L = G.L, i = G.idx;
     G.mode = 'result';
     G.fails[i] = 0;
-    const comboOk = s.maxCombo >= L.goals.combo, starsOk = s.stars >= L.goals.stars;
-    const stars = 1 + (comboOk ? 1 : 0) + (starsOk ? 1 : 0);
+    const goals = evalGoals(L, s);
+    const stars = 1 + goals.filter(([ok]) => ok).length;
     const best = save.best[L.code] || { stars: 0, score: 0, combo: 0 };
     save.best[L.code] = { stars: Math.max(best.stars, stars), score: Math.max(best.score, s.score), combo: Math.max(best.combo, s.maxCombo) };
     save.unlocked = Math.max(save.unlocked, Math.min(LEVELS.length, i + 2));
     persist();
     Snd.sfx('win');
     $('#resCode').textContent = `${L.code} ${L.name}`;
-    const checks = [
-      [true, '抵达终点并完成清场'],
-      [comboOk, `最高连击 ≥ ${L.goals.combo}（本次 ${s.maxCombo}）`],
-      [starsOk, `收集星星 ≥ ${L.goals.stars}（本次 ${s.stars}）`],
-    ];
+    const checks = [[true, L.boss ? '打倒布丁王并完成清场' : '抵达终点并完成清场'], ...goals];
     $('#resChecks').innerHTML = checks.map(([ok, str]) => `<li class="${ok ? 'ok' : ''}">${str}</li>`).join('');
     const tier = G.clear ? ['', '基础', '华丽', '传奇'][G.clear.tier] : '—';
     const stats = [['分数', s.score], ['最高连击', s.maxCombo], ['魔法能量', Math.floor(s.energy)], ['清场', tier]];
@@ -1469,7 +1841,8 @@
       }
       const moved = s.p.x - G.prevX;
       G.prevX = s.p.x;
-      if (s.p.onGround && moved > 0.1) G.runAnim += dt;
+      if (s.p.onGround && moved > 0.05 && moved < 20) G.runAnim += moved / CFG.runSpeed;
+      G.idleT = s.p.onGround && moved <= 0.05 ? G.idleT + dt : 0;
     } else if (G.mode === 'countdown') {
       G.countdown -= dt;
       const c = Math.ceil(G.countdown);
@@ -1493,6 +1866,8 @@
       G.sqx += (1 - G.sqx) * Math.min(1, dt * 12);
       G.sqy += (1 - G.sqy) * Math.min(1, dt * 12);
       G.comboPop = Math.max(0, G.comboPop - dt * 4);
+      G.flash = Math.max(0, G.flash - dt);
+      G.shake = Math.max(0, G.shake - dt);
       G.cat.moodT -= dt;
       if (G.cat.moodT <= 0) G.cat.mood = 'idle';
       G.cat.bubbleT -= dt;
@@ -1510,11 +1885,16 @@
     ctx.imageSmoothingQuality = 'high';
     drawBackground(G.camX);
     const inGame = G.mode !== 'title';
+    const sh = G.shake > 0 ? Math.sin(G.time * 90) * 6 * (G.shake / 0.35) : 0;
     ctx.save();
-    ctx.translate(-Math.round(G.camX * k) / k, 0);
+    ctx.translate(-Math.round(G.camX * k) / k + sh, sh * 0.5);
     drawWorld(G.L, inGame ? G.s : null);
     ctx.restore();
     if (!inGame || !G.s) return;
+    if (G.flash > 0) {
+      ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(0.85, G.flash * 2)})`;
+      ctx.fillRect(0, 0, W, VH);
+    }
     if (G.mode === 'clear') drawClear();
     else if (G.mode !== 'result') drawHUD();
     if (G.mode === 'countdown') {
@@ -1533,40 +1913,53 @@
     const root = newRun(L, false);
     root.ev = null;
     const D = 6, H = 160, LIMIT = opt.limit || 300000;
-    const needCombo = opt.combo ? L.goals.combo : 0, needStars = opt.stars ? L.goals.stars : 0;
+    const goalN = (name) => (L.goals.find((g) => g[0] === name) || [])[1] || 0;
+    const needCombo = opt.combo ? goalN('combo') : 0, needStars = opt.stars ? goalN('stars') : 0;
     const ok = (s) => s.finished && s.maxCombo >= needCombo && s.stars >= needStars;
-    const bad = (s) => s.dead || s.hurts > 0 || (s.finished && !ok(s));
+    const bad = (s) => s.dead || s.hurts > 0 || s.doorFails > 0 || (s.finished && !ok(s));
     const key = (s) => {
       const p = s.p;
       let k = `${Math.round(p.x / 4)},${Math.round(p.y / 4)},${Math.round(p.vy / 30)},${p.air},${p.onGround ? 1 : 0},${p.stompT > 0 ? 1 : 0},${s.cat.phase}`;
       for (const e of s.en) k += e.alive ? '1' : '0';
+      k += `|${s.seals.join('')}${s.doorDone.join('')}`;
+      if (s.boss) {
+        const b = s.boss;
+        k += `|${b.state},${b.hp},${Math.round(b.x / 4)},${b.spawnLeft},${Math.round(b.t * 10)}`;
+        for (const e of s.en) if (e.minion && e.alive) k += `,${Math.round(e.x / 4)}`;
+      }
       if (needCombo) k += `,${s.combo},${Math.ceil(s.comboT * 4)},${s.maxCombo >= needCombo ? 1 : 0}`;
       if (needStars) k += `,${Math.min(s.stars, needStars)}`;
       return k;
     };
     const seen = new Set();
     let nodes = 0;
+    // 尽量不点：先沿"不点击"走到视野尽头，走不通再从最晚的决策点开始尝试点击
     function dfs(s, taps) {
       if (++nodes > LIMIT) return null;
       const k = key(s);
       if (seen.has(k)) return null;
       seen.add(k);
-      const cur = cloneRun(s);
+      const cur = cloneRun(s), points = [];
+      let alive = true;
       for (let i = 0; i <= H; i++) {
         if (ok(cur)) return taps;
-        if (i % D === 0) {
-          const b = cloneRun(cur), n = b.n;
-          step(L, b, true);
-          if (!bad(b)) {
-            const r = dfs(b, taps.concat(n));
-            if (r) return r;
-          }
-          if (nodes > LIMIT) return null;
-        }
+        if (i % D === 0) points.push(cloneRun(cur));
         step(L, cur, false);
-        if (bad(cur)) return null;
+        if (bad(cur)) { alive = false; break; }
       }
-      return dfs(cur, taps);
+      if (alive) {
+        const r = dfs(cur, taps);
+        if (r) return r;
+      }
+      for (let j = points.length - 1; j >= 0; j--) {
+        if (nodes > LIMIT) return null;
+        const b = cloneRun(points[j]), n = b.n;
+        step(L, b, true);
+        if (bad(b)) continue;
+        const r = dfs(b, taps.concat(n));
+        if (r) return r;
+      }
+      return null;
     }
     const taps = dfs(root, []);
     let result = null;
@@ -1585,7 +1978,7 @@
   }
   // 调试：不依赖 requestAnimationFrame 手动快进（页面在后台时用于截图验证）
   function tick(sec) { for (let t = 0; t < sec; t += 1 / 60) update(1 / 60); render(); return G.mode; }
-  window.__mmq = { solve, autoplay: (i, taps) => startLevel(i, taps), tick, G, LEVELS, CFG, step, newRun };
+  window.__mmq = { solve, autoplay: (i, taps) => startLevel(i, taps), tick, G, LEVELS, CFG, step, newRun, jumpCue };
 
   // ===== 启动 =====
   syncSoundLabels();
