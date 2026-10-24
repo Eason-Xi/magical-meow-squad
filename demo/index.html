@@ -803,6 +803,8 @@
 
   function resize() {
     const vw = window.innerWidth, vh = window.innerHeight;
+    // 后台标签页或尚未布局的面板里视口可能是 0，此时不渲染，等下一次 resize
+    if (!vw || !vh) { scale = 0; return; }
     dpr = Math.min(2, window.devicePixelRatio || 1);
     W = Math.round(Math.min(1200, Math.max(720, VH * vw / vh)));
     scale = Math.min(vw / W, vh / VH);
@@ -1313,7 +1315,7 @@
     for (const b of L.solids) {
       if (b.x + b.w < x0 || b.x > x1) continue;
       const c = solidCanvas(b);
-      ctx.drawImage(c, b.x - c.pad, b.y - c.pad, c.lw, c.lh);
+      if (c.width && c.height) ctx.drawImage(c, b.x - c.pad, b.y - c.pad, c.lw, c.lh);
     }
     for (const z of L.slow) if (z[1] > x0 && z[0] < x1) drawSlowZone(z);
     L.doors.forEach((d, i) => {
@@ -1814,9 +1816,10 @@
   function frame(now) {
     const dt = Math.min(0.1, (now - last) / 1000);
     last = now;
-    update(dt);
-    render();
+    // 先预约下一帧，单帧出错也不会让游戏永久停住
     requestAnimationFrame(frame);
+    update(dt);
+    if (scale > 0) render();
   }
 
   function update(dt) {
