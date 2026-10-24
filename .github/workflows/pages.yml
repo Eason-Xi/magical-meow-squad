@@ -1,0 +1,55 @@
+name: 部署试玩版到 GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'demo/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # demo/index.html 按 Artifact 规范只写页面内容，这里补上 doctype、编码与视口外壳
+      - name: 组装站点
+        run: |
+          mkdir -p _site
+          cp -r demo/assets _site/assets
+          {
+            printf '<!doctype html>\n<html lang="zh-CN">\n<head>\n'
+            printf '<meta charset="utf-8">\n'
+            printf '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
+            printf '</head>\n<body>\n'
+            cat demo/index.html
+            printf '\n</body>\n</html>\n'
+          } > _site/index.html
+          touch _site/.nojekyll
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
