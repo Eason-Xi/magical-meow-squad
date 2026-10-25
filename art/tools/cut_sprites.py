@@ -89,11 +89,12 @@ if __name__ == "__main__":
     out.mkdir(parents=True, exist_ok=True)
     greenish = lambda r, g, b: g > r + 12 and g > b + 12
     meta = {}
+    # 高清版：主角按原图约 1.9 倍、怪物与猫咪 2 倍输出，与游戏代码里的 SPRITE_RES 对应
     meta.update(cut(raw / "girl_sheet.png", out, 2, 4,
                     [["run1", "run2", "run3", "run4"], ["jump", "fall", "hurt", "win"]],
-                    edge_t=16, target_h=200, enclosed_fn=greenish,
+                    edge_t=16, target_h=380, enclosed_fn=greenish,
                     scale_by={"run1", "run2", "run3", "run4"}))
     meta.update(cut(raw / "mobs_sheet.png", out, 2, 3,
                     [["jelly", "pudding", "king"], ["cat_idle", "cat_cheer", "cat_worry"]],
-                    edge_t=16, target_h=240, scale_by={"king"}))
+                    edge_t=16, target_h=480, scale_by={"king"}))
     print(json.dumps(meta, ensure_ascii=False))

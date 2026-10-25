@@ -116,9 +116,8 @@
   }
   .fine { margin: 0; font-size: clamp(12px, 3vh, 15px); color: var(--plum-soft); }
   .title-art { position: relative; width: 40%; height: 92%; pointer-events: none; }
-  .title-art img { position: absolute; bottom: 4%; max-width: none; }
-  #artGirl { right: 18%; height: 78%; animation: bob 2.4s ease-in-out infinite; }
-  #artCat { right: 0; height: 34%; bottom: 30%; animation: bob 2s ease-in-out infinite 0.4s; }
+  .title-art img { position: absolute; max-width: none; }
+  #artHero { right: 10%; bottom: 12%; height: 62%; animation: bob 2.6s ease-in-out infinite; }
   #btnSound { position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); bottom: max(10px, env(safe-area-inset-bottom, 0px)); }
   @keyframes bob { 50% { transform: translateY(-10px); } }
 
@@ -126,7 +125,7 @@
   .select { width: min(940px, 100%); display: flex; flex-direction: column; gap: clamp(8px, 2.4vh, 16px); }
   .select header { display: flex; align-items: baseline; justify-content: center; gap: 12px; }
   .tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-  .tab { font: inherit; font-size: clamp(15px, 4vh, 20px); color: var(--plum-soft); background: #fff; border: 3px solid #ffd3e2; border-radius: 999px; padding: 4px 16px; min-height: 40px; cursor: pointer; }
+  .tab { font: inherit; font-size: clamp(13px, 3.6vh, 18px); color: var(--plum-soft); background: #fff; border: 3px solid #ffd3e2; border-radius: 999px; padding: 4px 16px; min-height: 40px; cursor: pointer; }
   .tab.on { color: #fff; background: linear-gradient(#ff9ec0, #ff6f9c); border-color: #fff; box-shadow: 0 3px 0 var(--pink-deep); }
   .tab:focus-visible { outline: 3px solid var(--lav); outline-offset: 3px; }
   .cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: clamp(6px, 1.4vw, 14px); }
@@ -149,6 +148,7 @@
   .select footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
 
   /* 失败 / 暂停 */
+  .ending { width: min(620px, 100%); display: flex; flex-direction: column; gap: clamp(8px, 2.6vh, 16px); }
   .fail, .pause { width: min(460px, 100%); display: flex; flex-direction: column; gap: clamp(8px, 2.6vh, 16px); }
   .tip { margin: 0; font-size: clamp(15px, 3.8vh, 19px); line-height: 1.5; color: var(--plum); }
   .easy { margin: 0; font-size: 14px; color: var(--mint-deep); }
@@ -190,7 +190,7 @@
     .result-body { grid-template-columns: 1fr; }
   }
   @media (prefers-reduced-motion: reduce) {
-    #artGirl, #artCat, .rotate .phone { animation: none; }
+    #artHero, .rotate .phone { animation: none; }
   }
 </style>
 
@@ -207,11 +207,10 @@
         <button id="btnStart" class="btn">开始冒险</button>
         <button id="btnSelect" class="btn mint">选关</button>
       </div>
-      <p class="fine">试玩版 · 糖果森林 10 关 + 月光游乐园 5 关 · 点屏幕或按空格跳跃</p>
+      <p class="fine">完整版 · 5 章 50 关 · 点屏幕或按空格跳跃</p>
     </div>
     <div class="title-art">
-      <img id="artGirl" src="assets/sprites/win.png" alt="">
-      <img id="artCat" src="assets/sprites/cat_cheer.png" alt="">
+      <img id="artHero" src="assets/title_art.webp" alt="魔法少女和猫咪伙伴">
     </div>
     <button id="btnSound" class="chip">声音：开</button>
   </section>
@@ -220,8 +219,11 @@
     <div class="panel select">
       <header>
         <div class="tabs" role="tablist">
-          <button id="tabCh1" class="tab" role="tab">第 1 章 · 糖果森林</button>
-          <button id="tabCh2" class="tab" role="tab">第 2 章 · 月光游乐园</button>
+          <button id="tabCh1" class="tab" role="tab">1 糖果森林</button>
+          <button id="tabCh2" class="tab" role="tab">2 月光游乐园</button>
+          <button id="tabCh3" class="tab" role="tab">3 云端甜品城</button>
+          <button id="tabCh4" class="tab" role="tab">4 镜像魔法馆</button>
+          <button id="tabCh5" class="tab" role="tab">5 星河城堡</button>
         </div>
       </header>
       <div id="levelCards" class="cards"></div>
@@ -280,6 +282,19 @@
     </div>
   </section>
 
+  <section id="scrEnding" class="screen dim" hidden>
+    <div class="panel ending">
+      <p class="eyebrow">尾声</p>
+      <h2 id="endTitle">愿望碎片</h2>
+      <p class="tip" id="endText">打倒星河魔王后，它胸前的愿望宝石碎成了无数光点。猫咪轻声说："原来我们一路净化的怪物，都是被这台愿望机器弄坏的愿望……"<br>宝石的光芒在你掌心跳动，你要怎么做？</p>
+      <div class="row" id="endChoices">
+        <button id="btnEndFix" class="btn">修复愿望机器</button>
+        <button id="btnEndBreak" class="btn mint">打破旧规则</button>
+      </div>
+      <div class="row" id="endBack" hidden><button id="btnEndHome" class="btn ghost">回到首页</button></div>
+    </div>
+  </section>
+
   <section id="scrRotate" class="screen rotate" hidden>
     <div class="phone" aria-hidden="true"></div>
     <p>请把手机横过来玩</p>
@@ -296,6 +311,9 @@
   const CFG = {
     runSpeed: 220, gravity: 1800, jumpV: 600, doubleJumpV: 540, bounceV: 680,
     perfectMul: 1.15, perfectWindow: 0.12, springV: 920, maxFall: 1000,
+    balloonMul: 1.45, // 踩破气球怪的超级弹跳（约为普通弹跳高度的 2 倍）
+    cartMul: 1.6, // 过山车上的前进速度倍率
+    liftV: 460, // 猫咪托举的向上速度
     coyote: 0.09, buffer: 0.10, comboWindow: 2.2, hp: 2, invuln: 1.2,
     // PRD 4.1 原文为"踩怪后恢复两次跳跃"；按评审建议只恢复二段跳，避免一路飞过关卡
     bounceRestore: 1,
@@ -305,9 +323,23 @@
   const VH = 540;
   const GY = 440;
   const COMBO_BONUS = { 3: [100, 5], 5: [300, 10], 10: [700, 20] };
-  const ENEMY_SIZE = { jelly: [44, 36], pudding: [46, 40], fly: [44, 34], hopper: [40, 48] };
+  const ENEMY_SIZE = { jelly: [44, 36], pudding: [46, 40], fly: [44, 34], hopper: [40, 48], balloon: [40, 44], bird: [46, 34], ghost: [40, 38], spike: [38, 38] };
+  // 镜子幽灵：周期性显形 / 隐形，隐形时碰不到
+  const ghostOn = (e, t) => ((t + e.ph) % 2.4) < 1.5;
+  const CART_FLOOR = 16; // 坐在车厢里时，脚底比轨道面高出的距离
+  // 过山车轨道：折线上任意 x 处的轨道面高度；断轨处返回 null
+  function railY(r, x) {
+    if (x < r.x0 || x > r.x1 || r.gaps.some(([a, b]) => x >= a && x <= b)) return null;
+    for (let i = 1; i < r.pts.length; i++) {
+      const [ax, ay] = r.pts[i - 1], [bx, by] = r.pts[i];
+      if (x <= bx) return ay + ((by - ay) * (x - ax)) / (bx - ax);
+    }
+    return null;
+  }
   const CRUMBLE_FALL = 0.5, CRUMBLE_BACK = 3.5; // 饼干平台：踩上 0.5 秒后坠落，3.5 秒后复原
-  const BUB_RISE = 150, BUB_TIME = 1.8, BUB_CD = 3.5; // 反重力泡泡：上升速度、最长持续、被用掉后多久复原
+  const BUB_RISE = 150, BUB_TIME = 1.8, BUB_CD = 3.5;
+  const WIND_TAIL = 1.35, WIND_HEAD = 0.7, UPDRAFT = 210; // 顺风/逆风速度倍率、上升气流的上升速度
+  const CEIL_TOP = -200; // 天花板块从画面上方延伸下来 // 反重力泡泡：上升速度、最长持续、被用掉后多久复原
   const TAU = Math.PI * 2;
   // 移动平台在时刻 t 的位置（只由时间决定，求解器可复现）
   const platAt = (pl, t) => (pl.mv ? { x: pl.x + pl.dx * Math.sin(t * pl.w0 + pl.ph), y: pl.y + pl.dy * Math.sin(t * pl.w0 + pl.ph), w: pl.w } : pl);
@@ -318,6 +350,8 @@
     { id: 'shield', from: 10, name: '连击护盾', short: '护盾', desc: '连击到 5 时套上泡泡护盾，能挡一次伤害' },
     { id: 'rescue', from: 11, name: '坑边救援', short: '救援', desc: '每关第一次掉坑，猫咪把你拎回来（扣 1 颗心）' },
     { id: 'magnet', from: 12, name: '星星磁吸', short: '磁吸', desc: '连击期间，附近的星星会被吸过来' },
+    { id: 'lift', from: 20, name: '猫咪托举', short: '托举', desc: '二段跳用完后再点一下，猫咪把你往上托一把' },
+    { id: 'scout', from: 31, name: '侦查', short: '侦查', desc: '幻影平台会显出虚线，别踩上去' },
   ];
   const MAGNET_R = 60;
   // 章节主题：远景、中景、地块配色
@@ -331,6 +365,21 @@
       bg: 'bg2', sky: ['#2b2a6b', '#8a6fc0'], hill: '#5a4b93', stick: 'rgba(255,240,200,0.55)', swirl: 'rgba(255,255,255,0.6)',
       lolly: ['#ff9ec0', '#7ec8ff', '#c7b3ff', '#ffd77a'], haze: ['rgba(60,40,110,0)', 'rgba(70,50,120,0.45)'], twinkle: true,
       ground: { top: '#a99be0', bottom: '#6a58ad', line: '#2f2560', dots: 'rgba(47, 37, 96, 0.35)', icing: '#eaf3ff', icingLine: '#a9bde8' },
+    },
+    cloud: {
+      bg: 'bg3', sky: ['#a6d8ff', '#fff2f8'], hill: '#fff6fb', stick: 'rgba(255,255,255,0.7)', swirl: 'rgba(255,255,255,0.85)',
+      lolly: ['#ffc6d9', '#bfe6ff', '#e0d2ff', '#fff0b3'], haze: ['rgba(255,255,255,0)', 'rgba(255,250,255,0.6)'],
+      ground: { top: '#f7a8c4', bottom: '#d2779c', line: '#7a2f52', dots: 'rgba(122, 47, 82, 0.28)', icing: '#ffffff', icingLine: '#f0cfe0' },
+    },
+    mirror: {
+      bg: 'bg4', sky: ['#3a3470', '#8f86c8'], hill: '#4d4590', stick: 'rgba(220,230,255,0.5)', swirl: 'rgba(255,255,255,0.6)',
+      lolly: ['#c7d8ff', '#e5d9ff', '#a9bde8', '#ffe3f0'], haze: ['rgba(80,70,140,0)', 'rgba(90,80,150,0.45)'],
+      ground: { top: '#d9e4f7', bottom: '#8f9fc8', line: '#36406e', dots: 'rgba(54, 64, 110, 0.3)', icing: '#f4f8ff', icingLine: '#b9c6e6' },
+    },
+    galaxy: {
+      bg: 'bg5', sky: ['#1f1c4f', '#6a4fa0'], hill: '#3b2f72', stick: 'rgba(255,240,200,0.5)', swirl: 'rgba(255,255,255,0.6)',
+      lolly: ['#ffd77a', '#c7b3ff', '#7ec8ff', '#ff9ec0'], haze: ['rgba(40,30,90,0)', 'rgba(60,40,110,0.45)'], twinkle: true,
+      ground: { top: '#ffd98a', bottom: '#c98a3a', line: '#5a3510', dots: 'rgba(90, 53, 16, 0.3)', icing: '#fff6dc', icingLine: '#e9c98a' },
     },
   };
   const CAT_NEXT = { go: 'tunnel', tunnel: 'press', press: 'bridge', bridge: 'back', back: 'done' };
@@ -585,17 +634,427 @@
         ...line(3400, 410, 4, 46)],
       hints: [[0, 600, '第 2 章阶段关：月光魔术秀！'], [1700, 1890, '一次起跳，连踩 6 只'], [3300, 3700, '月光魔术兔登场…']],
     },
+    {
+      // 新怪物：气球怪，踩破它得到超级弹跳（约普通的 2 倍高），能上高塔、飞过大坑、拿高空星星
+      code: '2-6', name: '气球派对', tag: '超级弹跳', theme: 'moon', goals: [['stars', 16], ['combo', 5]], finish: 5800,
+      solids: [[0, 1200, 440], [1200, 1600, 250], [1600, 2400, 440], [2900, 6400, 440]],
+      plats: [],
+      springs: [],
+      bubbles: [[1135, 395]],
+      enemies: [['hopper', 700, 440, null, { hop: 55 }], ['balloon', 1120, 372, null, { amp: 6 }], ['hopper', 1420, 250, null, { hop: 45 }],
+        ['balloon', 1900, 372, null, { amp: 6, skin: 'mint' }], ['balloon', 2470, 360, null, { amp: 5, skin: 'gold' }], ['balloon', 2711, 360, null, { amp: 5 }],
+        ['jelly', 3300], ['jelly', 3466], ['jelly', 3632], ['jelly', 3798], ['jelly', 3964],
+        ['balloon', 4500, 350, null, { amp: 26, period: 2.2, skin: 'mint' }], ['fly', 5000, 380, null, { amp: 15, skin: 'fly2' }], ['hopper', 5300, 440, null, { hop: 55, phase: 1 }]],
+      stars: [...line(300, 410, 3, 46), [1240, 120], [1280, 110], [1320, 120], ...line(1700, 410, 3, 46), [2020, 110], [2060, 100], [2100, 110],
+        [2590, 95], [2830, 95], ...line(3100, 410, 3, 46), [3383, 247], [3549, 247], [3715, 247], [3881, 247],
+        [4620, 100], [4660, 90], [4700, 100], ...line(5450, 410, 3, 46)],
+      hints: [[0, 600, '新朋友：气球怪！'], [600, 1080, '踩破气球＝超级弹跳，跳得超高'], [1700, 1880, '踩气球去拿高空星星'],
+        [2250, 2400, '大坑：踩着气球飞过去！'], [3100, 3290, '一次起跳，连踩 5 只'], [4300, 4480, '会上下飘的气球，看准时机']],
+    },
+    {
+      // 新机关：过山车。坐上车厢后速度变快，贴着轨道上下坡，点一下连人带车跳过断轨
+      code: '2-7', name: '月光过山车', tag: '过山车', theme: 'moon', goals: [['noHurt'], ['stars', 15]], finish: 6400,
+      solids: [[0, 900, 440], [3700, 4100, 440], [6000, 7000, 440]],
+      plats: [],
+      springs: [],
+      rails: [
+        { pts: [[900, 456], [1300, 456], [1600, 330], [1900, 330], [2200, 420], [2600, 300], [3000, 300], [3300, 456], [3700, 456]], gaps: [[1950, 2080], [2700, 2830]] },
+        { pts: [[4100, 456], [4500, 380], [4800, 380], [5100, 250], [5300, 250], [5600, 456], [6000, 456]], gaps: [[4560, 4690], [5130, 5240]] },
+      ],
+      enemies: [['hopper', 600, 440, null, { hop: 55 }], ['balloon', 1750, 200, null, { amp: 8 }], ['balloon', 3150, 220, null, { amp: 8, skin: 'mint' }],
+        ['jelly', 3900], ['balloon', 4900, 220, null, { amp: 10, skin: 'gold' }], ['fly', 5450, 300, null, { amp: 15 }]],
+      stars: [...line(300, 410, 3, 46), ...line(1050, 410, 3, 60), [1660, 290], [1760, 290], [1860, 290], [2015, 230], [2400, 330],
+        [2765, 200], [2900, 270], ...line(3800, 410, 2, 46), [4300, 380], [4625, 280], [4900, 330], [5185, 150], [5400, 300], ...line(6100, 410, 3, 46)],
+      hints: [[0, 600, '前面是月光过山车！'], [700, 900, '坐上车厢，速度会变快'], [1700, 1940, '断轨！点一下连车一起跳过去'],
+        [3720, 4090, '下一段更刺激'], [4900, 5120, '高处还有断轨']],
+    },
+    {
+      code: '2-8', name: '旋转飞椅', tag: '空中连踩', theme: 'moon', goals: [['perfect', 3], ['combo', 7]], finish: 6100,
+      solids: [[0, 1000, 440], [1610, 2600, 440], [3240, 4400, 440], [5000, 6600, 440]],
+      plats: [[2900, 120, 420, 'm', { dx: 40, period: 2.4 }]],
+      springs: [],
+      bubbles: [[4420, 395], [4920, 330]],
+      enemies: [['hopper', 600, 440, null, { hop: 55 }], ['balloon', 1110, 380, null, { amp: 5 }], ['balloon', 1370, 380, null, { amp: 5, skin: 'mint' }],
+        ['jelly', 1800], ['jelly', 1966], ['jelly', 2132], ['jelly', 2298], ['jelly', 2464],
+        ['fly', 2630, 404, null, { amp: 6, skin: 'fly2' }], ['fly', 2796, 404, null, { amp: 6 }], ['balloon', 3050, 380, null, { amp: 5, skin: 'gold' }],
+        ['jelly', 3600], ['hopper', 3900, 440, null, { hop: 60 }], ['jelly', 5300], ['jelly', 5466], ['hopper', 5700, 440, null, { hop: 55 }]],
+      stars: [...line(250, 410, 3, 46), [1240, 110], [1500, 110], [1883, 247], [2049, 247], [2215, 247], [2381, 247], [2547, 247], [2713, 247],
+        [3180, 110], ...line(3400, 410, 3, 46), [4530, 336], [4640, 261], [5030, 255], [5140, 180], ...line(5900, 410, 3, 46)],
+      hints: [[0, 600, '旋转飞椅：一路都在天上'], [800, 1000, '踩着气球连跳过坑'], [1600, 1790, '一次起跳，连踩 7 只！'],
+        [3600, 3800, '踩怪瞬间再点一下＝完美弹跳'], [4250, 4410, '泡泡接力过大坑']],
+    },
+    {
+      code: '2-9', name: '午夜大游行', tag: '综合复习', theme: 'moon', goals: [['seqFirst'], ['combo', 8]], finish: 6800,
+      tint: 'rgba(40, 20, 90, 0.22)',
+      solids: [[0, 900, 440], [1010, 2500, 440], [4200, 5800, 440], [6250, 7400, 440]],
+      plats: [],
+      springs: [],
+      slow: [[1200, 2100, 0.8]],
+      seqs: [{ marks: [[1400, 410], [1560, 320], [1700, 410, 1], [1850, 330]], gateX: 2100, respawnX: 1100 }],
+      rails: [{ pts: [[2500, 456], [2900, 456], [3200, 340], [3500, 340], [3800, 456], [4200, 456]], gaps: [[3280, 3400]] }],
+      enemies: [['hopper', 600, 440, null, { hop: 55 }], ['balloon', 3050, 230, null, { amp: 8, skin: 'gold' }],
+        ['jelly', 4400], ['jelly', 4566], ['jelly', 4732], ['jelly', 4898], ['jelly', 5064],
+        ['fly', 5230, 404, null, { amp: 6, skin: 'fly2' }], ['fly', 5396, 404, null, { amp: 6 }], ['jelly', 5562],
+        ['balloon', 5880, 380, null, { amp: 5 }], ['balloon', 6121, 380, null, { amp: 5, skin: 'mint' }], ['hopper', 6500, 440, null, { hop: 55 }]],
+      stars: [...arc(890, 140, 3, 410, 75), ...line(2600, 410, 3, 60), [3330, 250], [3600, 300], [4483, 247], [4649, 247], [4815, 247],
+        [4981, 247], [5147, 247], [5313, 247], [5479, 247], [6000, 110], [6240, 110], ...line(6600, 410, 3, 46)],
+      hints: [[0, 520, '午夜大游行：第 2 章最终复习'], [1100, 1390, '依次碰亮印记，避开乌云'], [2300, 2490, '坐过山车！'],
+        [4250, 4390, '连踩 8 只冲三星！'], [5600, 5790, '踩气球飞过大坑']],
+    },
+    {
+      // 章末首领：夜之马戏团长挂着气球飘在空中。踩它放出的气球借超级弹跳飞上去，落在它头上
+      code: '2-10', name: '夜之马戏团', tag: '章末首领', theme: 'moon', goals: [['noHurt'], ['combo', 6]], finish: null,
+      tint: 'rgba(60, 20, 70, 0.2)',
+      solids: [[0, 1100, 440], [2500, 5400, 440]],
+      plats: [],
+      springs: [],
+      rails: [{ pts: [[1100, 456], [1500, 360], [1800, 360], [2100, 456], [2500, 456]], gaps: [[1600, 1720]] }],
+      enemies: [['hopper', 650, 440, null, { hop: 55 }], ['balloon', 1650, 220, null, { amp: 8 }],
+        ['jelly', 2700], ['jelly', 2866], ['jelly', 3032], ['fly', 3198, 404, null, { amp: 6, skin: 'fly2' }], ['fly', 3364, 404, null, { amp: 6 }], ['jelly', 3530]],
+      boss: { kind: 'ringmaster', name: '夜之马戏团长', stopX: 4000, homeOff: 430, speeds: [60, 66, 72], slams: [0, 1, 1], minions: [1, 1, 1], minion: 'balloon', w: 90, h: 64, lift: 70 },
+      stars: [...line(250, 410, 3, 46), ...line(1200, 400, 3, 60), [1660, 280], [1780, 290], [2783, 247], [2949, 247], [3115, 247], [3281, 247], [3447, 247],
+        ...line(3700, 410, 3, 46)],
+      hints: [[0, 600, '第 2 章最终战：夜之马戏团！'], [900, 1100, '先坐一段过山车'], [2550, 2690, '一次起跳，连踩 6 只'], [3700, 4000, '马戏团长飘在天上…']],
+    },
   ];
   const DOOR_LEDGE = 360;
+
+  // ===== 第 3～5 章：按跑速自动排布的关卡分段 =====
+  // 距离都由该关跑速 v 推算：单跳水平距离≈0.667v，二段跳≈1.08v，踩怪弹回同高≈0.756v，
+  // 气球超级弹跳≈1.1v。坑宽、连踩间距、风区坑宽都按这些比例取安全值，跑速越快整关越紧凑。
+  const CEIL_Y = 120; // 镜像段天花板底面高度
+  function genLevel(meta, build) {
+    const v = meta.speed;
+    const d = {
+      plats: [], springs: [], enemies: [], stars: [], hints: [], bubbles: [], slow: [], winds: [], flips: [],
+      ceilings: [], seqs: [], doors: [], seals: [], rails: [], ...meta, solids: [],
+    };
+    const B = { x: 0 };
+    const R = Math.round;
+    const ground = (len, y = GY) => {
+      const last = d.solids[d.solids.length - 1];
+      if (last && last[1] === B.x && last[2] === y) last[1] += len; else d.solids.push([B.x, B.x + len, y]);
+      B.x += len;
+    };
+    const hint = (text, from, to) => d.hints.push([Math.max(0, from), to, text]);
+    const starLine = (x, y, n, gap = 46) => { for (let k = 0; k < n; k++) d.stars.push([x + k * gap, y]); };
+    const starArc = (x0, span, n, base, peak) => d.stars.push(...arc(x0, span, n, base, peak));
+    const S = {
+      start(text, len = 520) { ground(len); starLine(220, 410, 3); if (text) hint(text, 0, len - 40); },
+      run(len = 360, n = 3) { const x = B.x; ground(len); if (n) starLine(x + 60, 410, n); },
+      // 坑：s 普通单跳 / s2 较宽单跳 / d 二段跳 / d2 较宽二段跳
+      pit(kind = 's', text) {
+        const w = R({ s: 0.45 * v + 30, s2: 0.55 * v + 30, d: 0.72 * v + 30, d2: 0.84 * v + 30 }[kind]);
+        if (text) hint(text, B.x - 240, B.x);
+        const dbl = kind[0] === 'd';
+        starArc(B.x - 20, w + 40, dbl ? 4 : 3, 410, dbl ? 140 : 75);
+        B.x += w; ground(300);
+      },
+      step(h = 70, len = 360, text) {
+        if (text) hint(text, B.x - 240, B.x);
+        d.solids.push([B.x, B.x + len, GY - h]); starLine(B.x + 60, GY - h - 30, 3, 60);
+        B.x += len; ground(260);
+      },
+      // 连踩：同高怪物按 0.756v 排开，一次起跳就能一路弹过去；fly 起改为同高的飞飞怪
+      chain(n, o = {}) {
+        const sp = R(0.756 * v), x0 = B.x + 320;
+        if (o.text !== false) hint(o.text || `一次起跳，连踩 ${n} 只！`, B.x + 40, x0 - 60);
+        for (let k = 0; k < n; k++) {
+          const cx = x0 + k * sp;
+          if (o.fly != null && k >= o.fly) d.enemies.push(['fly', cx, 404, null, { amp: 5, skin: k % 2 ? 'fly2' : 'fly' }]);
+          else d.enemies.push(['jelly', cx]);
+          if (k < n - 1) d.stars.push([cx + sp / 2, 247]);
+        }
+        ground(x0 - B.x + (n - 1) * sp + 300);
+      },
+      hoppers(n, hop = 60) {
+        const x = B.x;
+        for (let k = 0; k < n; k++) d.enemies.push(['hopper', x + 220 + k * 280, GY, null, { hop, phase: k * 1.3 }]);
+        ground(220 + n * 280 + 120);
+      },
+      birds(n, text) {
+        const x = B.x;
+        if (text) hint(text, x, x + 400);
+        for (let k = 0; k < n; k++) {
+          const top = k % 2 ? 330 : 360;
+          d.enemies.push(['bird', x + 520 + k * 300, top, null, { speed: 110 + (k % 3) * 15, skin: k % 2 ? 'bird2' : 'bird', phase: k }]);
+          d.stars.push([x + 300 + k * 300, top - 70]);
+        }
+        ground(520 + n * 300 + 200);
+      },
+      ghosts(n, text) {
+        const x = B.x;
+        if (text) hint(text, x, x + 260);
+        for (let k = 0; k < n; k++) d.enemies.push(['ghost', x + 280 + k * 300, 398, null, { amp: 6, phase: k * 0.8, skin: k % 2 ? 'ghost2' : 'ghost' }]);
+        ground(280 + n * 300 + 160);
+      },
+      // 星刺球：不能踩，只能跳过；pair 时两个挨在一起，要一跳跨过
+      spikes(n, o = {}) {
+        const x = B.x;
+        if (o.text) hint(o.text, x, x + 260);
+        for (let k = 0; k < n; k++) {
+          const cx = x + 280 + k * 320;
+          d.enemies.push(['spike', cx, GY]);
+          if (o.pair && k % 2) d.enemies.push(['spike', cx + 58, GY]);
+          d.stars.push([cx + (o.pair && k % 2 ? 29 : 0), 320]);
+        }
+        ground(280 + n * 320 + 160);
+      },
+      // 顺风区：跑得更快、跳得更远，坑也更宽
+      tail(len = 960, text) {
+        const x = B.x, w = R(0.62 * v + 30);
+        d.winds.push([x, x + len, 'tail']);
+        if (text) hint(text, x, x + 300);
+        ground(320); starArc(B.x - 20, w + 40, 4, 410, 90); B.x += w; ground(len - 320 - w);
+      },
+      head(len = 900, text) {
+        const x = B.x;
+        d.winds.push([x, x + len, 'head']);
+        if (text) hint(text, x, x + 300);
+        d.enemies.push(['hopper', x + 360, GY, null, { hop: 55 }], ['hopper', x + 680, GY, null, { hop: 55, phase: 1.4 }]);
+        starLine(x + 140, 410, 3); ground(len);
+      },
+      // 上升气流：坑上方的气柱把人托起，飘过去
+      updraft(text) {
+        const x = B.x, cw = 220, w = 10 + cw + R(0.3 * v);
+        if (text) hint(text, x - 260, x);
+        d.winds.push([x + 10, x + 10 + cw, 'up']);
+        for (let k = 1; k <= 4; k++) d.stars.push([x + 10 + k * 50, 411 - (UPDRAFT * k * 50) / v]);
+        B.x += w; ground(300);
+      },
+      // 气柱 + 高台：被托上去后落在高台上
+      updraftLedge(text) {
+        const x = B.x, cw = 230;
+        if (text) hint(text, x - 260, x);
+        d.winds.push([x, x + cw, 'up']);
+        ground(cw);
+        d.solids.push([B.x, B.x + 500, GY - 170]); starLine(B.x + 80, GY - 200, 4, 70);
+        B.x += 500; ground(280);
+      },
+      spring(text) {
+        if (text) hint(text, B.x - 200, B.x);
+        ground(200); d.springs.push([B.x - 80, GY]);
+        const w = R(0.8 * v); starArc(B.x - 60, w + 80, 4, 410, 210); B.x += w; ground(300);
+      },
+      // 气球过坑：一串气球按超级弹跳的距离排开
+      balloonPit(n = 2, text) {
+        const x = B.x, sp = R(1.096 * v);
+        if (text) hint(text, x - 240, x);
+        for (let k = 0; k < n; k++) {
+          const bx = x + 70 + k * sp;
+          d.enemies.push(['balloon', bx, 380, null, { amp: 4, skin: ['pink', 'mint', 'gold'][k % 3] }]);
+          d.stars.push([bx + R(0.55 * v), 100]);
+        }
+        B.x = x + 70 + (n - 1) * sp + R(1.0 * v); ground(300);
+      },
+      crumbles(n = 3, text) {
+        const x = B.x;
+        if (text) hint(text, x - 240, x);
+        for (let k = 0; k < n; k++) { d.plats.push([x + 60 + k * 190, 110, GY, 'c']); d.stars.push([x + 115 + k * 190, 410]); }
+        B.x = x + 60 + n * 190; ground(300);
+      },
+      movers(text) {
+        const x = B.x;
+        if (text) hint(text, x - 240, x);
+        d.plats.push([x + 110, 110, 420, 'm', { dx: 60, period: 2.4 }], [x + 360, 110, 410, 'm', { dx: 60, period: 2.4, phase: Math.PI }]);
+        d.stars.push([x + 165, 360], [x + 415, 350]);
+        B.x = x + 600; ground(300);
+      },
+      coaster(len = 2000, text) {
+        const x = B.x, g = R(0.42 * CFG.cartMul * v);
+        if (text) hint(text, x - 260, x);
+        d.rails.push({
+          pts: [[x, 456], [x + 400, 456], [x + 700, 340], [x + 1000, 340], [x + 1300, 430], [x + 1600, 330], [x + len - 300, 330], [x + len - 100, 456], [x + len, 456]],
+          gaps: [[x + 820, x + 820 + g], [x + 1640, x + 1640 + g]],
+        });
+        d.stars.push([x + 860, 260], [x + 1680, 250], [x + 1150, 300]);
+        B.x += len; ground(300);
+      },
+      // 印记机关：减速到与第 2 章相同的有效速度，几何关系和已验证的版本一致
+      seq(text = '依次碰亮印记，避开乌云') {
+        const x = B.x, f = 176 / v;
+        hint(text, x, x + 300);
+        d.slow.push([x + 100, x + 1000, f]);
+        d.seqs.push({ marks: [[x + 300, 410], [x + 460, 320], [x + 600, 410, 1], [x + 750, 330]], gateX: x + 1000, respawnX: x + 40 });
+        ground(1200);
+      },
+      // 真假门（not = 路牌说反话）：同样减速到第 1 章 1-4 的有效速度
+      door(up, down, correct, not) {
+        const x = B.x, f = 121 / v;
+        hint(not ? '路牌说反话：画的是"不是这扇门"' : '路牌上的图案 = 正确的门', x, x + 290);
+        d.slow.push([x + 200, x + 750, f]);
+        d.plats.push([x + 510, 216, DOOR_LEDGE]);
+        d.doors.push({ x: x + 750, signX: x + 290, up, down, correct, respawnX: x + 60, not });
+        ground(1050);
+      },
+      // 镜像段：入口镜像门让重力翻转、贴着天花板跑；出口镜像门再翻回地面
+      flipRun(len, o = {}) {
+        const x = B.x, gx = x + 100, ex = x + len - 150, gw = R(0.45 * v + 30);
+        if (o.text) hint(o.text, x - 200, gx);
+        d.flips.push(gx, ex);
+        ground(160);
+        // 天花板：落脚区之后按需留出缺口
+        const segs = [];
+        let cx = x;
+        const gapAt = [];
+        for (let k = 0; k < (o.gaps || 0); k++) gapAt.push(x + 520 + k * R((len - 900) / Math.max(1, o.gaps)));
+        for (const g of gapAt) { segs.push([cx, g]); d.stars.push([g + gw / 2, CEIL_Y + 100]); cx = g + gw; }
+        segs.push([cx, x + len + 60]);
+        for (const [a, b] of segs) d.ceilings.push([a, b, CEIL_Y]);
+        // 倒挂连踩
+        if (o.hang) {
+          const sp = R(0.756 * v), h0 = (gapAt.length ? gapAt[gapAt.length - 1] + gw : x + 520) + 300;
+          for (let k = 0; k < o.hang; k++) {
+            d.enemies.push(['jelly', h0 + k * sp, CEIL_Y, null, { hang: true }]);
+            if (k < o.hang - 1) d.stars.push([h0 + k * sp + sp / 2, CEIL_Y + 193]);
+          }
+        }
+        B.x = ex - 40; ground(len - (ex - 40 - x) + 200);
+      },
+      // 幻影平台桥：每一组里只有一块是真的（侦查后幻影显出虚线）
+      fakeBridge(text) {
+        const x = B.x;
+        if (text) hint(text, x - 240, x);
+        d.plats.push([x + 60, 130, 400], [x + 300, 120, 400, 'f'], [x + 300, 120, 320], [x + 540, 120, 400], [x + 540, 120, 320, 'f']);
+        d.stars.push([x + 125, 360], [x + 360, 280], [x + 600, 360]);
+        B.x = x + 760; ground(300);
+      },
+      boss(cfg) {
+        const x = B.x; ground(1500);
+        d.boss = { homeOff: 430, ...cfg, stopX: x + 520 };
+        d.finish = null;
+      },
+    };
+    // 记录每一段的起点，供分段验证使用
+    d.sec = [];
+    for (const k of Object.keys(S)) { const f = S[k]; S[k] = (...a) => { d.sec.push(B.x); return f(...a); }; }
+    build(S);
+    if (!d.boss) { ground(560); d.finish = B.x - 300; ground(300); }
+    // 星星目标 = 本关星星总数的 60%
+    d.goals = d.goals.map((g) => (g[0] === 'stars' && g[1] === 'auto' ? ['stars', Math.floor(d.stars.length * 0.6)] : g));
+    return d;
+  }
+
+  const C3 = { theme: 'cloud', speed: 230 }, C3b = { theme: 'cloud', speed: 236 };
+  const C4 = { theme: 'mirror', speed: 240 }, C4b = { theme: 'mirror', speed: 246 };
+  const C5 = { theme: 'galaxy', speed: 250 }, C5b = { theme: 'galaxy', speed: 256 };
+  LEVEL_DEFS.push(
+    // ---- 第 3 章：云端甜品城（顺风/逆风、上升气流、糖果小鸟；猫咪学会托举） ----
+    genLevel({ ...C3, code: '3-1', name: '云端起跑', tag: '顺风', goals: [['combo', 4], ['stars', 'auto']] }, (S) => {
+      S.start('第 3 章：云端甜品城！'); S.tail(960, '顺风区跑得更快、跳得更远'); S.run(); S.pit('s'); S.chain(4); S.tail(960); S.pit('s'); S.hoppers(2); S.run();
+    }),
+    genLevel({ ...C3, code: '3-2', name: '上升气流', tag: '上升气流', goals: [['noHurt'], ['stars', 'auto']] }, (S) => {
+      S.start('前面有上升气流'); S.updraft('走进发光的气柱，会被托着飞过去'); S.run(); S.pit('s'); S.updraftLedge('气柱能把你托上高台'); S.chain(4); S.updraft(); S.hoppers(2);
+    }),
+    genLevel({ ...C3, code: '3-3', name: '逆风小径', tag: '逆风', goals: [['combo', 5], ['stars', 'auto']] }, (S) => {
+      S.start(); S.head(900, '逆风区走得慢，看准小丑再跳'); S.run(); S.pit('s'); S.head(900); S.chain(5); S.tail(960); S.pit('d', '大坑：二段跳'); S.run();
+    }),
+    genLevel({ ...C3, code: '3-4', name: '糖果小鸟', tag: '飞行小鸟', goals: [['combo', 5], ['stars', 'auto']] }, (S) => {
+      S.start(); S.birds(3, '糖果小鸟会飞过来：踩它，或者从下面钻过去'); S.pit('s2'); S.birds(3); S.chain(5, { fly: 3 }); S.updraft(); S.birds(4); S.run();
+    }),
+    genLevel({ ...C3, code: '3-5', name: '棉花糖云巨人', tag: '小首领', goals: [['combo', 5], ['energy', 90]] }, (S) => {
+      S.start('第 3 章阶段关'); S.tail(900); S.pit('s2'); S.chain(5); S.birds(2); S.run();
+      S.boss({ kind: 'cloudgiant', name: '棉花糖云巨人', speeds: [80, 92, 104], slams: [1, 1, 2], minions: [0, 1, 1], w: 96, h: 70, slamStyle: 'jump', waveArt: 'choco' });
+    }),
+    genLevel({ ...C3b, code: '3-6', name: '弹簧云梯', tag: '弹簧+气流', goals: [['combo', 6], ['stars', 'auto']] }, (S) => {
+      S.start(); S.spring('踩上弹簧糖，弹过大坑'); S.run(); S.updraftLedge(); S.pit('d'); S.spring(); S.chain(6); S.updraft(); S.hoppers(3);
+    }),
+    genLevel({ ...C3b, code: '3-7', name: '风中饼干', tag: '风+崩塌', goals: [['noHurt'], ['combo', 6]] }, (S) => {
+      S.start(); S.tail(960); S.crumbles(3, '饼干平台，别停！'); S.head(900); S.crumbles(4); S.birds(3); S.pit('d'); S.chain(6, { fly: 4 });
+    }),
+    genLevel({ ...C3b, code: '3-8', name: '空中连击', tag: '空中路线', goals: [['combo', 7], ['stars', 'auto']] }, (S) => {
+      S.start(); S.balloonPit(2, '踩着气球飞过大坑'); S.chain(7, { fly: 3 }); S.updraft(); S.balloonPit(3); S.birds(4); S.pit('d2', '宽坑：二段跳不够就请猫咪托举');
+    }),
+    genLevel({ ...C3b, code: '3-9', name: '风暴前夕', tag: '综合复习', tint: 'rgba(255, 170, 120, 0.14)', goals: [['noHurt'], ['combo', 8]] }, (S) => {
+      S.start('第 3 章最终复习'); S.tail(960); S.pit('s2'); S.updraftLedge(); S.head(900); S.crumbles(4); S.chain(8, { fly: 5 }); S.birds(4); S.spring(); S.pit('d2');
+    }),
+    genLevel({ ...C3b, code: '3-10', name: '甜点风神', tag: '章末首领', tint: 'rgba(255, 150, 120, 0.16)', goals: [['noHurt'], ['combo', 6]] }, (S) => {
+      S.start('第 3 章最终战：甜点风神！'); S.tail(900); S.chain(6); S.updraft(); S.run();
+      S.boss({ kind: 'windgod', name: '甜点风神', speeds: [62, 68, 74], slams: [0, 1, 1], minions: [1, 1, 1], minion: 'balloon', w: 96, h: 64, lift: 70, waveArt: 'star' });
+    }),
+    // ---- 第 4 章：镜像魔法馆（重力翻转、幻影平台、镜子幽灵、说反话的路牌；猫咪学会侦查） ----
+    genLevel({ ...C4, code: '4-1', name: '镜像大厅', tag: '重力翻转', goals: [['combo', 5], ['stars', 'auto']] }, (S) => {
+      S.start('第 4 章：镜像魔法馆！'); S.flipRun(1200, { text: '穿过镜像门，重力会翻转！' }); S.run(400); S.pit('s'); S.flipRun(1400, { gaps: 1, text: '天花板上也有缺口，点一下"往下跳"' }); S.chain(5);
+    }),
+    genLevel({ ...C4, code: '4-2', name: '幻影平台', tag: '幻影平台', goals: [['noHurt'], ['stars', 'auto']] }, (S) => {
+      S.start(); S.fakeBridge('有些平台是幻影：猫咪会把它们标成虚线'); S.run(); S.flipRun(1200, { gaps: 1 }); S.fakeBridge(); S.chain(5); S.pit('d');
+    }),
+    genLevel({ ...C4, code: '4-3', name: '镜中幽灵', tag: '幽灵', goals: [['combo', 6], ['stars', 'auto']] }, (S) => {
+      S.start(); S.ghosts(3, '幽灵隐形时碰不到，显形时可以踩'); S.pit('s2'); S.flipRun(1500, { hang: 3, text: '倒挂的怪也能踩' }); S.ghosts(4); S.chain(6, { fly: 4 });
+    }),
+    genLevel({ ...C4, code: '4-4', name: '说反话的路牌', tag: '反向提示', goals: [['doorFirst'], ['combo', 6]] }, (S) => {
+      S.start(); S.door('heart', 'star', 'up', true); S.run(); S.flipRun(1200, { gaps: 1 }); S.door('moon', 'heart', 'down', true); S.chain(6); S.ghosts(3);
+    }),
+    genLevel({ ...C4, code: '4-5', name: '镜子小丑', tag: '小首领', goals: [['combo', 6], ['energy', 100]] }, (S) => {
+      S.start('第 4 章阶段关'); S.flipRun(1100); S.fakeBridge(); S.chain(6); S.run();
+      S.boss({ kind: 'clown', name: '镜子小丑', speeds: [84, 96, 108], slams: [0, 1, 1], minions: [1, 1, 2], minion: 'fly', vanish: true, w: 84, h: 62, waveArt: 'star' });
+    }),
+    genLevel({ ...C4b, code: '4-6', name: '倒挂连踩', tag: '天花板连踩', goals: [['combo', 5], ['stars', 'auto']] }, (S) => {
+      S.start(); S.flipRun(1900, { gaps: 1, hang: 5, text: '在天花板上连踩 5 只！' }); S.run(); S.ghosts(3); S.flipRun(1800, { gaps: 2, hang: 3 }); S.pit('d');
+    }),
+    genLevel({ ...C4b, code: '4-7', name: '幻影旋转台', tag: '幻影+移动', goals: [['noHurt'], ['combo', 7]] }, (S) => {
+      S.start(); S.movers(); S.fakeBridge(); S.flipRun(1400, { gaps: 2 }); S.movers(); S.ghosts(4); S.chain(7, { fly: 4 });
+    }),
+    genLevel({ ...C4b, code: '4-8', name: '翻转迷宫', tag: '连续翻转', goals: [['combo', 7], ['stars', 'auto']] }, (S) => {
+      S.start(); S.flipRun(1000, { gaps: 1, text: '镜像门一道接一道' }); S.run(260, 2); S.flipRun(1000, { gaps: 1 }); S.run(260, 2); S.flipRun(1500, { gaps: 2, hang: 3 }); S.fakeBridge(); S.chain(7);
+    }),
+    genLevel({ ...C4b, code: '4-9', name: '镜厅终章', tag: '综合复习', goals: [['doorFirst'], ['combo', 8]] }, (S) => {
+      S.start('第 4 章最终复习'); S.door('star', 'moon', 'up', true); S.flipRun(1700, { gaps: 2, hang: 4 }); S.fakeBridge(); S.ghosts(4); S.chain(8, { fly: 5 }); S.pit('d2');
+    }),
+    genLevel({ ...C4b, code: '4-10', name: '镜之女王', tag: '章末首领', tint: 'rgba(120, 140, 220, 0.16)', goals: [['noHurt'], ['combo', 6]] }, (S) => {
+      S.start('第 4 章最终战：镜之女王！'); S.flipRun(1200, { gaps: 1 }); S.chain(6); S.run();
+      S.boss({ kind: 'queen', name: '镜之女王', speeds: [86, 98, 110], slams: [1, 2, 2], minions: [0, 1, 2], minion: 'fly', vanish: true, w: 92, h: 66, waveArt: 'star' });
+    }),
+    // ---- 第 5 章：星河城堡（星刺球 + 全部机关混合，高手挑战与最终首领） ----
+    genLevel({ ...C5, code: '5-1', name: '星刺之路', tag: '星刺球', goals: [['combo', 6], ['stars', 'auto']] }, (S) => {
+      S.start('第 5 章：星河城堡！'); S.spikes(3, { text: '星刺球不能踩，只能跳过去！' }); S.pit('s2'); S.spikes(4, { pair: true }); S.chain(6); S.spikes(3);
+    }),
+    genLevel({ ...C5, code: '5-2', name: '流星过山车', tag: '过山车', goals: [['noHurt'], ['stars', 'auto']] }, (S) => {
+      S.start(); S.coaster(2200, '坐上流星过山车'); S.spikes(3, { pair: true }); S.coaster(2000); S.chain(6);
+    }),
+    genLevel({ ...C5, code: '5-3', name: '星云气流', tag: '气流+小鸟', goals: [['combo', 7], ['stars', 'auto']] }, (S) => {
+      S.start(); S.updraft(); S.spikes(2); S.tail(960); S.birds(4); S.balloonPit(2); S.chain(7, { fly: 4 });
+    }),
+    genLevel({ ...C5, code: '5-4', name: '星门试炼', tag: '解谜综合', goals: [['seqFirst'], ['doorFirst']] }, (S) => {
+      S.start(); S.seq(); S.flipRun(1400, { gaps: 2 }); S.door('moon', 'star', 'down', true); S.spikes(4, { pair: true }); S.chain(7);
+    }),
+    genLevel({ ...C5, code: '5-5', name: '流星骑士', tag: '小首领', goals: [['combo', 6], ['energy', 100]] }, (S) => {
+      S.start('第 5 章阶段关'); S.spikes(3); S.coaster(1800); S.chain(6); S.run();
+      S.boss({ kind: 'knight', name: '流星骑士', speeds: [88, 98, 108], slams: [0, 1, 1], minions: [1, 1, 1], minion: 'fly', w: 90, h: 62, waveArt: 'star' });
+    }),
+    genLevel({ ...C5b, code: '5-6', name: '星河长廊', tag: '超长连踩', goals: [['combo', 10], ['stars', 'auto']] }, (S) => {
+      S.start(); S.chain(10, { fly: 5, text: '一口气连踩 10 只！' }); S.spikes(4, { pair: true }); S.chain(10, { fly: 6 }); S.pit('d2');
+    }),
+    genLevel({ ...C5b, code: '5-7', name: '银河气球', tag: '高空路线', goals: [['noHurt'], ['combo', 8]] }, (S) => {
+      S.start(); S.balloonPit(3); S.updraftLedge(); S.birds(5); S.balloonPit(3); S.spikes(4); S.chain(8, { fly: 4 });
+    }),
+    genLevel({ ...C5b, code: '5-8', name: '颠倒星空', tag: '翻转+幻影', goals: [['combo', 8], ['stars', 'auto']] }, (S) => {
+      S.start(); S.flipRun(1700, { gaps: 2, hang: 4 }); S.ghosts(4); S.fakeBridge(); S.flipRun(1700, { gaps: 3 }); S.spikes(5, { pair: true }); S.chain(8);
+    }),
+    genLevel({ ...C5b, code: '5-9', name: '最终试炼', tag: '大复习', tint: 'rgba(80, 40, 140, 0.18)', goals: [['noHurt'], ['combo', 10]] }, (S) => {
+      S.start('最终试炼：所有本领全用上'); S.tail(960); S.crumbles(4); S.flipRun(1500, { gaps: 2 }); S.coaster(1800); S.seq(); S.ghosts(4); S.spikes(5, { pair: true }); S.chain(10, { fly: 5 }); S.pit('d2');
+    }),
+    genLevel({ ...C5b, code: '5-10', name: '星河魔王', tag: '最终首领', tint: 'rgba(90, 30, 120, 0.2)', goals: [['noHurt'], ['combo', 8]] }, (S) => {
+      S.start('最终决战：星河魔王！'); S.spikes(3); S.chain(8); S.run();
+      S.boss({ kind: 'demon', name: '星河魔王', hp: 4, speeds: [62, 68, 74, 80], slams: [1, 1, 2, 2], minions: [1, 1, 1, 1], minion: 'balloon', w: 100, h: 70, lift: 70, waveArt: 'star' });
+    }),
+  );
 
   function buildLevel(d, i) {
     const L = { ...d, idx: i };
     L.theme = d.theme || 'candy';
     L.solids = d.solids.map(([x0, x1, y], k) => ({ x: x0, y, w: x1 - x0, h: VH + 80 - y, seed: k * 17 + i * 101, pal: THEMES[L.theme].ground }));
+    // 天花板：从画面上方垂下来的块，翻转重力后可以站在它的底面
+    for (const [x0, x1, yb] of d.ceilings || []) L.solids.push({ x: x0, y: CEIL_TOP, w: x1 - x0, h: yb - CEIL_TOP, ceil: true, seed: x0 % 97 + i * 13, pal: THEMES[L.theme].ground });
+    L.winds = (d.winds || []).map(([x0, x1, type]) => ({ x0, x1, type }));
+    L.flips = d.flips || [];
+    L.speed = d.speed || CFG.runSpeed;
+    L.sec = d.sec || [];
     L.plats = d.plats.map(([x, w, y, kind, o = {}]) => ({
-      x, y, w, crumble: kind === 'c', mv: kind === 'm', dx: o.dx || 0, dy: o.dy || 0, w0: TAU / (o.period || 3), ph: o.phase || 0,
+      x, y, w, crumble: kind === 'c', mv: kind === 'm', fake: kind === 'f', dx: o.dx || 0, dy: o.dy || 0, w0: TAU / (o.period || 3), ph: o.phase || 0,
     }));
     L.bubbles = (d.bubbles || []).map(([x, y]) => ({ x, y, r: 34 }));
+    L.rails = (d.rails || []).map((r) => ({ pts: r.pts, gaps: r.gaps || [], x0: r.pts[0][0], x1: r.pts[r.pts.length - 1][0] }));
     // 印记机关：依次碰亮真印记开门；碰到假印记、或漏掉印记跑到门前，都回到 respawnX 重来
     L.seqs = (d.seqs || []).map((q) => ({
       marks: q.marks.map(([x, y, fake]) => ({ x, y, fake: !!fake })),
@@ -607,7 +1066,13 @@
       const [w, h] = ENEMY_SIZE[type];
       const e = { type, x: cx - w / 2, y: sy - h, w, h, vx: 0, x0: 0, x1: 0, patrol: false, seal: opt.seal ?? -1, minion: false, skin: opt.skin || type };
       // 飞飞怪：sy 表示顶面高度，按正弦上下飘动
-      if (type === 'fly') Object.assign(e, { y: sy, y0: sy, amp: opt.amp ?? 10, w0: (Math.PI * 2) / (opt.period || 2.4), ph: opt.phase || 0 });
+      if (type === 'fly' || type === 'balloon') Object.assign(e, { y: sy, y0: sy, amp: opt.amp ?? 10, w0: (Math.PI * 2) / (opt.period || 2.4), ph: opt.phase || 0 });
+      // 小鸟：飞在空中（sy 为顶面），主角靠近时才起飞向左；幽灵：飘浮并周期性隐形；星刺球：不能踩
+      if (type === 'bird') Object.assign(e, { y: sy, y0: sy, amp: opt.amp ?? 14, w0: TAU / 1.4, ph: opt.phase || 0, bird: true, bvx: -(opt.speed || 110), active: false });
+      if (type === 'ghost') Object.assign(e, { y: sy, y0: sy, amp: opt.amp ?? 8, w0: TAU / 2, ph: opt.phase || 0, ghost: true });
+      if (type === 'spike') { e.spike = true; if (opt.amp) Object.assign(e, { y: sy, y0: sy, amp: opt.amp, w0: TAU / (opt.period || 2), ph: opt.phase || 0 }); }
+      // 倒挂在天花板上的怪：sy 为天花板底面
+      if (opt.hang) Object.assign(e, { y: sy, hang: true });
       // 跳跳小丑：原地周期性弹起，sy 仍是站立面
       if (type === 'hopper') Object.assign(e, { y0: e.y, hop: opt.hop ?? 70, w0: TAU / (opt.period || 1.6), ph: opt.phase || 0 });
       if (patrol) { e.patrol = true; e.vx = -(opt.speed || 35); e.x0 = patrol[0] - w / 2; e.x1 = patrol[1] - w / 2; }
@@ -639,13 +1104,13 @@
       cat: { phase: L.cat ? 'idle' : 'none', t: 0 },
       doorDone: new Uint8Array(L.doors.length), doorFailsBy: new Uint8Array(L.doors.length), doorFails: 0,
       seals: new Uint8Array(L.seals.length),
-      boss: L.boss ? { state: 'idle', t: 0, hp: 3, phase: 1, x: L.boss.home - L.boss.w / 2, y: GY - L.boss.h, w: L.boss.w, h: L.boss.h, spawnLeft: 0, slamsLeft: 0 } : null,
+      boss: L.boss ? { state: 'idle', t: 0, hp: L.boss.hp || 3, phase: 1, x: L.boss.home - L.boss.w / 2, y: GY - L.boss.h - (L.boss.lift || 0), w: L.boss.w, h: L.boss.h, spawnLeft: 0, slamsLeft: 0 } : null,
       crumble: new Float64Array(L.plats.length),
-      ride: -1, bub: -1, bubT: 0, bubCD: new Float64Array(L.bubbles.length),
+      ride: -1, bub: -1, bubT: 0, bubCD: new Float64Array(L.bubbles.length), cart: -1, cartRode: new Uint8Array(L.rails.length),
       seqLit: new Uint8Array(L.seqs.length), seqDone: new Uint8Array(L.seqs.length), seqFails: 0,
       waves: [],
       sk: Object.fromEntries(CAT_SKILLS.map((k) => [k.id, L.idx >= k.from])),
-      shield: false, rescued: false, safeB: 0, safeX: 60,
+      shield: false, rescued: false, safeB: 0, safeX: 60, safeFlip: false, flip: false, lifted: false, lastFlipX: -1e9,
       easy: !!easy, dead: false, cause: '', finished: false, ev: [],
     };
   }
@@ -654,16 +1119,16 @@
       ...s, p: { ...s.p }, en: s.en.map((e) => ({ ...e })), got: s.got.slice(), springT: s.springT.slice(), cat: { ...s.cat },
       doorDone: s.doorDone.slice(), doorFailsBy: s.doorFailsBy.slice(), seals: s.seals.slice(), boss: s.boss ? { ...s.boss } : null,
       crumble: s.crumble.slice(), waves: s.waves.map((w) => ({ ...w })), ev: null,
-      bubCD: s.bubCD.slice(), seqLit: s.seqLit.slice(), seqDone: s.seqDone.slice(),
+      bubCD: s.bubCD.slice(), seqLit: s.seqLit.slice(), seqDone: s.seqDone.slice(), cartRode: s.cartRode.slice(),
     };
   }
 
   // 踩踏成功后的弹起、连击与计分（普通怪与首领共用）
-  function stompBounce(s, e, base, energy) {
+  function stompBounce(s, e, base, energy, mult = 1) {
     const p = s.p;
-    const perfect = p.buf > 0;
-    p.vy = -CFG.bounceV * (perfect ? CFG.perfectMul : 1);
-    p.y = e.y - p.h;
+    const perfect = p.buf > 0, gs = s.flip ? -1 : 1;
+    p.vy = -gs * CFG.bounceV * (perfect ? CFG.perfectMul : 1) * mult;
+    p.y = gs > 0 ? e.y - p.h : e.y + e.h;
     p.buf = 0;
     p.stompT = perfect ? 0 : CFG.perfectWindow;
     p.onGround = false;
@@ -706,32 +1171,42 @@
       case 'intro':
         if (b.t >= 1.4) toSpawn(B.minions[b.phase - 1]);
         break;
-      case 'spawn':
+      case 'spawn': {
+        // 气球型首领（马戏团长）：先丢杂技球，再放气球并立刻跟着气球走过来——
+        // 气球领先 60px、两者同速，踩气球弹起约 1 秒后落下时，首领正好走到脚下
+        const balloonBoss = B.minion === 'balloon';
+        if (balloonBoss && b.slamsLeft > 0) { b.state = 'slam'; b.t = 0; break; }
         if (b.spawnLeft > 0 && b.t >= 0.9) {
-          const base = { x: b.x - 20, vx: -78, x0: 0, x1: 0, patrol: false, seal: -1, minion: true, alive: true };
+          const v = balloonBoss ? B.speeds[b.phase - 1] : 78;
+          const base = { x: b.x - (balloonBoss ? 60 : 20), vx: -v, x0: 0, x1: 0, patrol: false, seal: -1, minion: true, alive: true };
           s.en.push(B.minion === 'fly'
             ? { ...base, type: 'fly', skin: 'fly2', y: GY - 40, y0: GY - 40, w: 44, h: 34, amp: 5, w0: TAU / 1.2, ph: 0 }
-            : { ...base, type: 'jelly', skin: 'jelly', y: GY - 36, w: 44, h: 36 });
+            : balloonBoss
+              ? { ...base, type: 'balloon', skin: ['pink', 'mint', 'gold'][b.phase - 1], y: GY - 72, y0: GY - 72, w: 40, h: 44, amp: 4, w0: TAU / 1.6, ph: 0 }
+              : { ...base, type: 'jelly', skin: 'jelly', y: GY - 36, w: 44, h: 36 });
           b.spawnLeft--; b.t = 0;
           emit(s, 'minion', { x: b.x, y: b.y });
+          if (balloonBoss && b.spawnLeft === 0) b.state = 'walk';
         } else if (b.spawnLeft === 0 && b.t >= 0.9) { b.state = b.slamsLeft > 0 ? 'slam' : 'walk'; b.t = 0; }
         break;
+      }
       case 'slam':
         // 0~0.35 秒蓄力下蹲，之后跳起，0.9 秒落地推出冲击波
         if (b.t >= 0.9) {
           b.slamsLeft--;
           // 矮而快：从脚下穿过的时间短，留给起跳的窗口约 0.3 秒
           s.waves.push({ x: b.x - 10, y: GY - 20, w: 26, h: 20, vx: -260 });
+          if (B.lift) s.waves[s.waves.length - 1].x = b.x + b.w / 2 - 13; // 飘在空中的首领从身下丢球
           emit(s, 'slam', { x: b.x + b.w / 2 });
           b.state = 'slamWait'; b.t = 0;
         }
         break;
       case 'slamWait':
-        if (b.t >= 0.8) { b.state = b.slamsLeft > 0 ? 'slam' : 'walk'; b.t = 0; }
+        if (b.t >= 0.8) { b.state = b.slamsLeft > 0 ? 'slam' : B.minion === 'balloon' ? 'spawn' : 'walk'; b.t = 0; }
         break;
       case 'walk':
         b.x -= B.speeds[b.phase - 1] * DT;
-        if (b.x + b.w < B.stopX - p.w - 240) { b.state = B.kind === 'rabbit' ? 'vanish' : 'return'; b.t = 0; }
+        if (b.x + b.w < B.stopX - p.w - 240) { b.state = B.vanish || B.kind === 'rabbit' ? 'vanish' : 'return'; b.t = 0; }
         break;
       case 'vanish':
         // 魔术兔：变个魔术瞬移回原位
@@ -739,7 +1214,7 @@
         break;
       case 'return':
         b.x += 190 * DT;
-        if (b.x >= home) { b.x = home; toSpawn(0); }
+        if (b.x >= home) { b.x = home; toSpawn(B.minion === 'balloon' ? 1 : 0); } // 气球型首领每轮都要重新放气球，否则踩不到
         break;
       case 'hit':
         b.x = Math.min(home + 40, b.x + 330 * DT);
@@ -788,10 +1263,20 @@
     s.t += DT;
     if (tap && !s.finished) p.buf = CFG.buffer;
 
-    let speed = s.finished ? 0 : CFG.runSpeed;
+    let speed = s.finished ? 0 : L.speed;
+    const gs = s.flip ? -1 : 1; // 重力方向：1 向下，-1 向上（镜像门翻转后）
     // 减速区：解谜前留出观察时间
     const pcx = p.x + p.w / 2;
     for (const [a, b, f] of L.slow) if (pcx >= a && pcx <= b) speed *= f;
+    // 风：顺风加速、逆风减速、上升气流把人往上托
+    let updraft = false;
+    for (const w of L.winds) {
+      if (pcx < w.x0 || pcx > w.x1) continue;
+      if (w.type === 'tail') speed *= WIND_TAIL;
+      else if (w.type === 'head') speed *= WIND_HEAD;
+      else if (w.type === 'up' && gs > 0) updraft = true;
+    }
+    if (s.cart >= 0) speed *= CFG.cartMul;
     // 首领战：进入擂台后站定迎击，并补满体力
     if (s.boss) {
       if (s.boss.state === 'idle' && p.x + p.w >= L.boss.stopX) {
@@ -826,22 +1311,28 @@
     // 跳跃：踩怪后极短窗口内点按 = 完美弹跳；地面/土狼时间 = 一段跳；空中 = 二段跳
     if (p.buf > 0) {
       if (p.stompT > 0) {
-        p.vy = -CFG.bounceV * CFG.perfectMul; p.stompT = 0; p.buf = 0;
+        p.vy = -gs * CFG.bounceV * CFG.perfectMul; p.stompT = 0; p.buf = 0;
         s.perfects++; s.score += 50;
         emit(s, 'perfect', { x: p.x + p.w / 2, y: p.y + p.h });
       } else if (p.onGround || p.coyote > 0) {
-        p.vy = -CFG.jumpV; p.onGround = false; p.coyote = 0; p.air = 1; p.buf = 0;
+        p.vy = -gs * CFG.jumpV; p.onGround = false; p.coyote = 0; p.air = 1; p.buf = 0;
         emit(s, 'jump', { n: 1 });
       } else if (p.air > 0) {
-        p.vy = -CFG.doubleJumpV; p.air--; p.buf = 0;
+        p.vy = -gs * CFG.doubleJumpV; p.air--; p.buf = 0;
         emit(s, 'jump', { n: 2, x: p.x + p.w / 2, y: p.y + p.h });
+      } else if (s.sk.lift && !s.lifted && s.bub < 0) {
+        // 猫咪托举：二段跳用完后再点一下，每次腾空只能用一次
+        p.vy = -gs * CFG.liftV; s.lifted = true; p.buf = 0;
+        emit(s, 'catLift', { x: p.x + p.w / 2, y: gs > 0 ? p.y + p.h : p.y });
       }
     }
     p.buf = Math.max(0, p.buf - DT);
     p.stompT = Math.max(0, p.stompT - DT);
     p.inv = Math.max(0, p.inv - DT);
 
-    p.vy = s.bub >= 0 ? -BUB_RISE : Math.min(p.vy + CFG.gravity * DT, CFG.maxFall);
+    if (s.bub >= 0) p.vy = -BUB_RISE;
+    else if (updraft) { p.vy = -UPDRAFT; p.air = Math.max(p.air, 1); }
+    else p.vy = gs > 0 ? Math.min(p.vy + CFG.gravity * DT, CFG.maxFall) : Math.max(p.vy - CFG.gravity * DT, -CFG.maxFall);
 
     // 未解除的封印、印记大门与地块一样是实心墙
     let walls = L.solids;
@@ -861,30 +1352,68 @@
     p.x += speed * DT;
     p.blocked = false;
     for (const b of walls) if (hit(p, b)) { p.x = b.x - p.w; p.blocked = true; }
+    // 镜像门：主角中心穿过门线时重力翻转
+    for (const fx of L.flips) {
+      if (prevCx < fx && p.x + p.w / 2 >= fx) {
+        s.flip = !s.flip; p.vy = 0; p.onGround = false; p.air = 1; s.lifted = false; s.lastFlipX = fx;
+        emit(s, 'flip', { x: fx, flip: s.flip });
+      }
+    }
+    const g2 = s.flip ? -1 : 1;
 
-    // 垂直
-    const prevBottom = p.y + p.h;
+    // 垂直（翻转时以块的底面为"地面"）
+    const prevBottom = p.y + p.h, prevTop = p.y;
     const wasGround = p.onGround;
     p.y += p.vy * DT;
     p.onGround = false;
     for (let i = 0; i < walls.length; i++) {
       const b = walls[i];
       if (!hit(p, b)) continue;
-      if (prevBottom <= b.y + 0.5) {
-        p.y = b.y - p.h; p.vy = 0; p.onGround = true;
-        if (i < L.solids.length) { s.safeB = i; s.safeX = p.x; } // 记录最近踩过的实心地面，供坑边救援
-      } else if (p.vy < 0) { p.y = b.y + b.h; p.vy = 0; }
+      if (g2 > 0) {
+        if (prevBottom <= b.y + 0.5) {
+          p.y = b.y - p.h; p.vy = 0; p.onGround = true;
+          if (i < L.solids.length) { s.safeB = i; s.safeX = p.x; s.safeFlip = false; } // 记录最近踩过的实心地面，供坑边救援
+        } else if (p.vy < 0) { p.y = b.y + b.h; p.vy = 0; }
+      } else if (prevTop >= b.y + b.h - 0.5) {
+        p.y = b.y + b.h; p.vy = 0; p.onGround = true;
+        if (i < L.solids.length) { s.safeB = i; s.safeX = p.x; s.safeFlip = true; }
+      } else if (p.vy > 0) { p.y = b.y - p.h; p.vy = 0; }
     }
     // 单向平台（含猫咪搭的桥、会崩塌的饼干平台）
     for (let i = 0; i < L.plats.length; i++) {
       if (s.crumble[i] > 0) { s.crumble[i] += DT; if (s.crumble[i] >= CRUMBLE_BACK) s.crumble[i] = 0; }
     }
+    // 过山车：上车、贴轨滑行、到终点下车
+    if (s.cart < 0) {
+      for (let i = 0; i < L.rails.length && g2 > 0; i++) {
+        const r = L.rails[i], ry = railY(r, p.x + p.w / 2);
+        if (ry === null || p.x + p.w / 2 > r.x0 + 40) continue;
+        if (p.y + p.h >= ry - CART_FLOOR - 40 && p.y + p.h <= ry - CART_FLOOR + 30) {
+          s.cart = i; s.cartRode[i] = 1;
+          p.y = ry - CART_FLOOR - p.h; p.vy = 0; p.onGround = true; p.air = 1;
+          emit(s, 'cartOn', { x: p.x + p.w / 2 });
+        }
+      }
+    } else {
+      const r = L.rails[s.cart], cxr = p.x + p.w / 2;
+      if (cxr > r.x1) { s.cart = -1; emit(s, 'cartOff'); }
+      else {
+        const ry = railY(r, cxr);
+        if (ry !== null && p.vy >= 0) {
+          const floor = ry - CART_FLOOR;
+          // 刚才在轨道上就继续贴住（上下坡），否则从上方落回轨道
+          if ((wasGround && p.y + p.h >= floor - 24) || (prevBottom <= floor + 1 && p.y + p.h >= floor)) {
+            p.y = floor - p.h; p.vy = 0; p.onGround = true;
+          }
+        }
+      }
+    }
     s.ride = -1;
-    if (p.vy >= 0) {
+    if (p.vy >= 0 && g2 > 0) {
       const onTop = (pl) => p.x + p.w > pl.x && p.x < pl.x + pl.w && prevBottom <= pl.y + 0.5 && p.y + p.h >= pl.y;
       for (let i = 0; i < L.plats.length; i++) {
         const pl = L.plats[i];
-        if (pl.crumble && s.crumble[i] >= CRUMBLE_FALL) continue;
+        if (pl.fake || (pl.crumble && s.crumble[i] >= CRUMBLE_FALL)) continue;
         const q = platAt(pl, s.t);
         if (!onTop(q)) continue;
         p.y = q.y - p.h; p.vy = 0; p.onGround = true;
@@ -896,14 +1425,14 @@
     for (let i = 0; i < L.springs.length; i++) {
       s.springT[i] += DT;
       const sp = L.springs[i];
-      if (p.vy >= 0 && hit(p, sp)) {
+      if (g2 > 0 && p.vy >= 0 && hit(p, sp)) {
         p.y = sp.y - p.h; p.vy = -CFG.springV; p.onGround = false; p.air = 1; s.springT[i] = 0;
         emit(s, 'spring', { i });
       }
     }
-    if (p.onGround) p.air = 1;
+    if (p.onGround) { p.air = 1; s.lifted = false; }
     if (!wasGround && p.onGround) emit(s, 'land');
-    if (wasGround && !p.onGround && p.vy >= 0) p.coyote = CFG.coyote;
+    if (wasGround && !p.onGround && p.vy * g2 >= 0) p.coyote = CFG.coyote;
     else p.coyote = Math.max(0, p.coyote - DT);
 
     if (!s.finished) {
@@ -919,7 +1448,7 @@
         } else {
           s.doorFails++; s.doorFailsBy[i]++;
           p.x = d.respawnX; p.y = GY - p.h; p.vy = 0; p.onGround = true; p.air = 1; p.buf = 0; p.stompT = 0; p.coyote = 0;
-          s.bub = -1; s.ride = -1;
+          s.bub = -1; s.ride = -1; s.cart = -1;
           p.px = p.x; p.py = p.y;
           if (s.combo > 1) emit(s, 'comboEnd', { combo: s.combo });
           s.combo = 0; s.comboT = 0;
@@ -954,7 +1483,7 @@
         } else if (wrong || atGate) {
           s.seqFails++; s.seqLit[i] = 0;
           p.x = q.respawnX; p.y = GY - p.h; p.vy = 0; p.onGround = true; p.air = 1; p.buf = 0; p.stompT = 0; p.coyote = 0;
-          p.px = p.x; p.py = p.y; s.bub = -1; s.ride = -1;
+          p.px = p.x; p.py = p.y; s.bub = -1; s.ride = -1; s.cart = -1;
           if (s.combo > 1) emit(s, 'comboEnd', { combo: s.combo });
           s.combo = 0; s.comboT = 0;
           emit(s, 'seqRetry', { i, fake: wrong });
@@ -965,6 +1494,8 @@
       const tol = s.easy ? CFG.stompTolEasy : CFG.stompTol;
       for (const e of s.en) {
         if (!e.alive) continue;
+        if (e.bird && !e.active) { if (e.x - p.x < 760) { e.active = true; e.vx = e.bvx; } else continue; }
+        if (e.bird && e.x + e.w < p.x - 600) { e.alive = false; continue; }
         if (e.amp) e.y = e.y0 + e.amp * Math.sin(s.t * e.w0 + e.ph);
         if (e.hop) e.y = e.y0 - e.hop * Math.max(0, Math.sin(s.t * e.w0 + e.ph));
         if (e.vx) {
@@ -973,10 +1504,17 @@
             if (e.x < e.x0) { e.x = e.x0; e.vx = -e.vx; } else if (e.x > e.x1) { e.x = e.x1; e.vx = -e.vx; }
           } else if (e.minion && e.x + e.w < L.boss.stopX - 480) { e.alive = false; continue; }
         }
+        if (e.ghost && !ghostOn(e, s.t)) continue;
         if (!hit(p, e)) continue;
-        if (p.vy > 0 && prevBottom <= e.y + tol) {
+        const fromAbove = g2 > 0 ? p.vy > 0 && prevBottom <= e.y + tol : p.vy < 0 && prevTop >= e.y + e.h - tol;
+        if (e.spike) {
+          // 星刺球：不能踩，从上面碰到也会受伤并被弹开
+          if (p.inv <= 0) { hurtPlayer(s, 'spike'); if (s.dead) return; if (fromAbove) p.vy = -g2 * 520; }
+          continue;
+        }
+        if (fromAbove) {
           e.alive = false;
-          const r = stompBounce(s, e, 100, 10);
+          const r = stompBounce(s, e, 100, 10, e.type === 'balloon' ? CFG.balloonMul : 1);
           emit(s, 'stomp', { x: e.x + e.w / 2, y: e.y, type: e.type, combo: s.combo, perfect: r.perfect, bonus: r.bonus, first: s.stomps === 1 });
           if (e.seal >= 0 && !s.seals[e.seal]) { s.seals[e.seal] = 1; emit(s, 'sealOpen', { i: e.seal }); }
         } else if (p.inv <= 0) {
@@ -1008,14 +1546,14 @@
           emit(s, 'star', { x: st.x, y: st.y, pulled: mag > 0 && (Math.abs(st.x - cx) >= 26 || Math.abs(st.y - cy) >= 36) });
         }
       }
-      if (p.y > VH + 40) {
+      if (g2 > 0 ? p.y > VH + 40 : p.y + p.h < -40) {
         if (s.sk.rescue && !s.rescued) {
-          // 坑边救援：拎回最近踩过的地面并往回退一段，留出重新起跳的距离
+          // 坑边救援：拎回最近踩过的地面（翻转时为天花板）并往回退一段，留出重新起跳的距离
           const b = L.solids[s.safeB];
-          s.rescued = true;
-          p.x = Math.max(b.x + 10, Math.min(s.safeX, b.x + b.w - p.w - 10) - 140);
-          p.y = b.y - p.h; p.vy = 0; p.onGround = true; p.air = 1; p.buf = 0; p.stompT = 0; p.coyote = 0;
-          p.px = p.x; p.py = p.y; p.inv = CFG.invuln; s.bub = -1; s.ride = -1;
+          s.rescued = true; s.flip = s.safeFlip;
+          p.x = Math.max(b.x + 10, s.lastFlipX + 12, Math.min(s.safeX, b.x + b.w - p.w - 10) - 140); // 不退回到镜像门另一侧
+          p.y = s.flip ? b.y + b.h : b.y - p.h; p.vy = 0; p.onGround = true; p.air = 1; p.buf = 0; p.stompT = 0; p.coyote = 0;
+          p.px = p.x; p.py = p.y; p.inv = CFG.invuln; s.bub = -1; s.ride = -1; s.cart = -1;
           s.crumble.fill(0); s.bubCD.fill(0); // 饼干平台和泡泡全部复原，避免救回来又掉下去
           p.hp--; s.hurts++;
           if (s.combo > 1) emit(s, 'comboEnd', { combo: s.combo });
@@ -1031,7 +1569,8 @@
   // ===== 素材 =====
   const IMG = {};
   const SPRITES = ['run1', 'run2', 'run3', 'run4', 'run5', 'run6', 'jump', 'fall', 'hurt', 'win', 'jelly', 'pudding', 'king',
-    'fly', 'fly2', 'bear', 'bear_jump', 'hopper', 'hopper_jump', 'rabbit', 'rabbit_cast', 'cat_idle', 'cat_cheer', 'cat_worry'];
+    'fly', 'fly2', 'bear', 'bear_jump', 'hopper', 'hopper_jump', 'rabbit', 'rabbit_cast', 'ringmaster', 'ringmaster_cast',
+    'bird', 'bird2', 'cloudgiant', 'windgod', 'ghost', 'ghost2', 'clown', 'queen', 'knight', 'knight_act', 'demon', 'demon_cast', 'cat_idle', 'cat_cheer', 'cat_worry'];
   function loadImg(name, src) {
     return new Promise((res) => {
       const im = new Image();
@@ -1049,6 +1588,9 @@
     ...SPRITES.map((n) => loadImg(n, `assets/sprites/${n}.png`)),
     loadImg('bg', 'assets/bg_far.jpg'),
     loadImg('bg2', 'assets/bg_far2.jpg'),
+    loadImg('bg3', 'assets/bg_far3.jpg'),
+    loadImg('bg4', 'assets/bg_far4.jpg'),
+    loadImg('bg5', 'assets/bg_far5.jpg'),
   ]);
 
   // ===== 存档 =====
@@ -1264,10 +1806,16 @@
     g.bezierCurveTo(x + s * 0.45, y - s * 1.05, x + s * 1.1, y - s * 0.35, x, y + s * 0.35);
     g.closePath();
   }
+  // 高清素材的分辨率倍率：绘制时按倍率缩回原先的显示尺寸（画面大小不变，只是更清晰）
+  const SPRITE_RES = {
+    run1: 1.9, run2: 1.9, run3: 1.9, run4: 1.9, run5: 1.9, run6: 1.9, jump: 1.9, fall: 1.9, hurt: 1.9, win: 1.9,
+    jelly: 2, pudding: 2, king: 2, cat_idle: 2, cat_cheer: 2, cat_worry: 2,
+  };
   function sprite(name, x, by, sc, o = {}) {
     const im = IMG[name];
     if (!im) return;
-    const w = im.width * sc, h = im.height * sc;
+    const r = SPRITE_RES[name] || 1;
+    const w = (im.width * sc) / r, h = (im.height * sc) / r;
     ctx.save();
     ctx.translate(x, by);
     ctx.scale((o.flip ? -1 : 1) * (o.sx || 1), o.sy || 1);
@@ -1321,7 +1869,9 @@
   function solidTiles(b) {
     let tiles = solidCache.get(b);
     if (tiles) return tiles;
-    const k = scale * dpr, pad = 6, h = VH + 30 - b.y;
+    const k = scale * dpr, pad = 6;
+    // 天花板块：只画露出画面的部分，饼干纹理上下翻转（糖霜朝下）
+    const surf = b.ceil ? b.y + b.h : b.y, h = b.ceil ? surf + 30 : VH + 30 - b.y;
     tiles = [];
     for (let tx = b.x - pad; tx < b.x + b.w + pad; tx += TILE) {
       const tw = Math.min(TILE, b.x + b.w + pad - tx) + 2; // 多画 2px 与下一片重叠，避免缝隙
@@ -1330,9 +1880,9 @@
       c.height = Math.max(1, Math.ceil((h + pad * 2) * k));
       const g = c.getContext('2d');
       g.scale(k, k);
-      g.translate(-tx, pad - b.y);
-      drawCookie(g, b.x, b.y, b.w, h, b.seed, b.pal);
-      Object.assign(c, { lx: tx, ly: b.y - pad, lw: tw, lh: h + pad * 2 });
+      if (b.ceil) { g.translate(-tx, h + pad); g.scale(1, -1); drawCookie(g, b.x, 0, b.w, h, b.seed, b.pal); }
+      else { g.translate(-tx, pad - b.y); drawCookie(g, b.x, b.y, b.w, h, b.seed, b.pal); }
+      Object.assign(c, { lx: tx, ly: b.ceil ? surf - h - pad : b.y - pad, lw: tw, lh: h + pad * 2 });
       tiles.push(c);
     }
     solidCache.set(b, tiles);
@@ -1358,7 +1908,7 @@
     if (L.boss) {
       strs.push([L.boss.name, 17, '#5b2a45', '', 0], ['生气了！', 22, '#fff', '#b8325f', 5], ['!!', 30, '#ff5d5d', '#fff', 6],
         [`打倒${L.boss.name}！`, 26, '#fff', '#7a4fd0', 5], ['体力补满', 18, '#fff', '#2f9c7d', 5]);
-      for (let h = 1; h <= 2; h++) strs.push([`命中！还剩 ${h} 下`, 26, '#fff', '#7a4fd0', 5]);
+      for (let h = 1; h <= 3; h++) strs.push([`命中！还剩 ${h} 下`, 26, '#fff', '#7a4fd0', 5]);
     }
     for (const [s, size, fill, stroke, sw] of strs) textBitmap(s, size, fill, stroke, sw);
   }
@@ -1497,8 +2047,21 @@
           else { Snd.sfx('jump2'); G.sqx = 0.8; G.sqy = 1.2; burst(G.fxW, e.x, e.y, 8, { kind: 'star', speed: 140, g: 200, size: 5, colors: STAR_COLORS, dir: Math.PI / 2, spread: 1.6, life: 0.45 }); }
           break;
         case 'land': G.sqx = 1.2; G.sqy = 0.84; burst(G.fxW, s.p.x + s.p.w / 2, s.p.y + s.p.h, 5, { kind: 'dot', speed: 90, g: 300, size: 3, colors: ['#fff3e4'], dir: -Math.PI / 2, spread: 2.6, life: 0.35 }); break;
+        case 'catLift':
+          Snd.sfx('rescue');
+          G.cat.x = e.x - 10; G.cat.y = s.flip ? e.y - 10 : e.y + 30;
+          G.cat.bubble = '托你一把！'; G.cat.bubbleT = 0.9; G.cat.mood = 'cheer'; G.cat.moodT = 0.8;
+          burst(G.fxW, e.x, e.y, 10, { kind: 'star', speed: 150, size: 5, colors: ['#c7b3ff', '#fff'], life: 0.5 });
+          break;
+        case 'flip':
+          Snd.sfx('magic', 1); G.flash = 0.2;
+          popup(e.x, s.flip ? 300 : 300, s.flip ? '重力翻转！' : '回到地面！', { size: 22, stroke: '#6a58ad' });
+          break;
+        case 'cartOn': Snd.sfx('spring'); G.sqx = 1.2; G.sqy = 0.85; break;
+        case 'cartOff': Snd.sfx('jump'); break;
         case 'stomp': {
           Snd.sfx('stomp', e.combo);
+          if (e.type === 'balloon') { Snd.sfx('pop2'); popup(e.x, e.y - 60, '超级弹跳！', { size: 20, stroke: '#e2557f' }); }
           G.sqx = 1.18; G.sqy = 0.86;
           burst(G.fxW, e.x, e.y + 10, 14, { kind: 'star', speed: 260, size: 7, colors: STAR_COLORS, life: 0.7 });
           burst(G.fxW, e.x, e.y + 14, 10, { kind: 'dot', speed: 160, size: 4, colors: ['#fff'], life: 0.5 });
@@ -1642,6 +2205,7 @@
     if (s.finished) return p.onGround ? 'win' : 'fall';
     if (p.inv > CFG.invuln - 0.35) return 'hurt';
     if (!p.onGround) return p.vy < -60 ? 'jump' : 'fall';
+    if (s.cart >= 0) return 'fall'; // 坐在过山车里：用站姿，腿被车厢前挡板遮住
     // 原地等待（猫咪机关、首领战、被墙挡住）用站姿，奔跑时播 6 帧循环（约 2.2 圈/秒）
     if (G.idleT > 0.08) return 'fall';
     return 'run' + (1 + (Math.floor(G.runAnim * 13) % 6));
@@ -1716,8 +2280,77 @@
     ctx.fillStyle = '#c98a4b'; ctx.fillRect(x - 3, GY - 150, 6, 150);
     ctx.fillStyle = '#fff6ec'; rr(ctx, x - 40, GY - 222, 80, 72, 12); ctx.fill();
     ctx.lineWidth = 3; ctx.strokeStyle = '#a84a70'; ctx.stroke();
+    if (d.not) {
+      // 反向提示：牌上画的是"错误的门"
+      const wrong = d.correct === 'up' ? d.down : d.up;
+      text(ctx, '不是这扇门', x, GY - 206, 14, { fill: '#b8325f', sw: 0 });
+      drawIcon(wrong, x, GY - 176, 17);
+      ctx.strokeStyle = '#e2334f'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(x - 16, GY - 192); ctx.lineTo(x + 16, GY - 160); ctx.moveTo(x + 16, GY - 192); ctx.lineTo(x - 16, GY - 160); ctx.stroke();
+      return;
+    }
     text(ctx, '正确的门', x, GY - 206, 14, { fill: '#8a5772', sw: 0 });
     drawIcon(icon, x, GY - 176, 17);
+  }
+  function drawWind(w, t) {
+    if (w.type === 'up') {
+      // 上升气流：发光的气柱 + 往上飘的光点
+      const g = ctx.createLinearGradient(w.x0, 0, w.x1, 0);
+      g.addColorStop(0, 'rgba(90, 180, 255, 0.08)'); g.addColorStop(0.5, 'rgba(110, 200, 255, 0.4)'); g.addColorStop(1, 'rgba(90, 180, 255, 0.08)');
+      ctx.fillStyle = g; ctx.fillRect(w.x0, 0, w.x1 - w.x0, VH);
+      ctx.strokeStyle = 'rgba(74, 140, 220, 0.55)'; ctx.lineWidth = 2; ctx.setLineDash([10, 8]);
+      ctx.beginPath(); ctx.moveTo(w.x0, 0); ctx.lineTo(w.x0, VH); ctx.moveTo(w.x1, 0); ctx.lineTo(w.x1, VH); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(60, 150, 240, 0.8)';
+      for (let k = 0; k < 16; k++) {
+        const px = w.x0 + hash(k * 3.3 + w.x0) * (w.x1 - w.x0), py = VH - ((t * 170 + hash(k * 7.1) * VH) % VH);
+        ctx.beginPath(); ctx.moveTo(px - 5, py + 6); ctx.lineTo(px, py); ctx.lineTo(px + 5, py + 6); ctx.stroke();
+      }
+      text(ctx, '↑ 上升气流', (w.x0 + w.x1) / 2, 128, 14, { fill: '#fff', stroke: '#2f6fc0', sw: 4 });
+      return;
+    }
+    // 顺风 / 逆风：横向流动的风线
+    const dir = w.type === 'tail' ? 1 : -1;
+    ctx.strokeStyle = w.type === 'tail' ? 'rgba(255, 255, 255, 0.55)' : 'rgba(150, 190, 255, 0.55)';
+    ctx.lineWidth = 2;
+    for (let k = 0; k < 16; k++) {
+      const len = 40 + hash(k * 2.7) * 40, span = w.x1 - w.x0;
+      const px = w.x0 + ((((t * 260 * dir + hash(k * 5.3) * span) % span) + span) % span), py = 140 + hash(k * 9.1) * 280;
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.quadraticCurveTo(px + len * 0.5 * dir, py - 6, px + len * dir, py); ctx.stroke();
+    }
+    text(ctx, w.type === 'tail' ? '顺风 ≫' : '≪ 逆风', w.x0 + 50, 128, 14, { fill: '#fff', stroke: '#4a7fd0', sw: 4 });
+  }
+  function drawMirrorGate(x, t) {
+    // 镜像门：一整面发光的竖直镜子
+    const g = ctx.createLinearGradient(x - 14, 0, x + 14, 0);
+    g.addColorStop(0, 'rgba(200, 220, 255, 0.15)'); g.addColorStop(0.5, 'rgba(235, 245, 255, 0.75)'); g.addColorStop(1, 'rgba(200, 220, 255, 0.15)');
+    ctx.fillStyle = g; ctx.fillRect(x - 14, 0, 28, VH);
+    ctx.strokeStyle = '#a9bde8'; ctx.lineWidth = 2; ctx.strokeRect(x - 14, -2, 28, VH + 4);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    for (let k = 0; k < 5; k++) { const py = (t * 90 + k * 110) % VH; starPath(ctx, x, py, 5, t + k); ctx.fill(); }
+    text(ctx, '⇅', x, 120, 22, { fill: '#fff', stroke: '#6a58ad', sw: 5 });
+  }
+  function drawFakePlat(pl, scout) {
+    // 幻影平台：外观和马卡龙一样；猫咪"侦查"后只剩虚线轮廓
+    if (!scout) { drawMacaron(pl.x, pl.y, pl.w); return; }
+    ctx.save();
+    ctx.globalAlpha = 0.45; drawMacaron(pl.x, pl.y, pl.w); ctx.globalAlpha = 1;
+    ctx.setLineDash([6, 5]); ctx.strokeStyle = '#e2334f'; ctx.lineWidth = 2.5;
+    rr(ctx, pl.x - 3, pl.y - 3, pl.w + 6, 28, 8); ctx.stroke();
+    ctx.restore();
+  }
+  function drawSpike(cx, cy, r, t) {
+    // 星刺球：不能踩的尖刺星星
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(t * 1.5);
+    ctx.fillStyle = '#ffd54a'; ctx.strokeStyle = '#8a4d00'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let k = 0; k < 16; k++) { const a = (k / 16) * TAU, rad = k % 2 ? r * 0.55 : r * 1.05; ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad); }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.rotate(-t * 1.5);
+    ctx.fillStyle = '#5b2a45';
+    ctx.beginPath(); ctx.arc(-5, -2, 2.5, 0, TAU); ctx.arc(5, -2, 2.5, 0, TAU); ctx.fill();
+    ctx.strokeStyle = '#5b2a45'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-5, 6); ctx.lineTo(0, 3); ctx.lineTo(5, 6); ctx.stroke();
+    ctx.restore();
   }
   function drawSlowZone([a, b]) {
     ctx.fillStyle = 'rgba(111, 211, 181, 0.4)';
@@ -1766,13 +2399,14 @@
     const [idle, act, sc] = BOSS_ART[kind];
     let key = idle;
     if (b.state === 'slam') {
-      if (kind === 'rabbit') { key = act; y -= Math.max(0, Math.sin((t / 0.9) * Math.PI)) * 18; }
+      if (kind !== 'bear' && G.L.boss.slamStyle !== 'jump') { key = act; y -= Math.max(0, Math.sin((t / 0.9) * Math.PI)) * 18; }
       else if (t < 0.35) { const q = t / 0.35; sx = 1 + q * 0.12; sy = 1 - q * 0.15; }
       else { y -= Math.sin(((t - 0.35) / 0.55) * Math.PI) * 120; key = act; }
     } else if (b.state === 'vanish') {
       alpha = Math.max(0, 1 - t / 0.4); sx = 1 + t * 0.6; sy = 1 + t * 0.6;
       if (Math.random() < 0.5) burst(G.fxW, x + (Math.random() - 0.5) * 60, y - 50, 1, { kind: 'star', speed: 80, size: 5, colors: ['#c7b3ff', '#fff'], life: 0.5, g: -100 });
     }
+    if (G.L.boss.lift) y += Math.sin(G.time * 2) * 6; // 挂着气球飘在空中
     ctx.fillStyle = 'rgba(90, 40, 30, 0.22)';
     ctx.beginPath(); ctx.ellipse(b.x + b.w / 2, GY, b.w * 0.55, 7, 0, 0, Math.PI * 2); ctx.fill();
     sprite(key, x, y, sc, { flip, sx, sy, alpha });
@@ -1847,10 +2481,70 @@
       text(ctx, `${lit}/${total}`, cx, gt.y + h / 2 + 1, 15, { fill: '#4a7fd0', sw: 0 });
     }
   }
-  const BOSS_ART = { king: ['king', 'king', 0.34], bear: ['bear', 'bear_jump', 0.36], rabbit: ['rabbit', 'rabbit_cast', 0.36] };
+  function drawRail(r, x0, x1) {
+    // 糖果条纹轨道 + 每隔一段的支架；断轨处留空
+    const pts = [];
+    for (let x = Math.max(r.x0, x0 - 20); x <= Math.min(r.x1, x1 + 20); x += 12) pts.push([x, railY(r, x)]);
+    ctx.lineCap = 'round';
+    for (const [w, c] of [[9, '#7a3b5c'], [6, '#ff9ec0']]) {
+      ctx.strokeStyle = c; ctx.lineWidth = w; ctx.beginPath();
+      let pen = false;
+      for (const [x, y] of pts) { if (y === null) { pen = false; continue; } if (pen) ctx.lineTo(x, y); else { ctx.moveTo(x, y); pen = true; } }
+      ctx.stroke();
+    }
+    for (const [x, y] of pts) {
+      if (y === null || Math.round(x) % 96 >= 12) continue;
+      ctx.fillStyle = 'rgba(255, 220, 240, 0.55)'; ctx.fillRect(x - 3, y + 4, 6, VH - y);
+    }
+    ctx.lineCap = 'butt';
+  }
+  function drawCart(x, y, front) {
+    // y 为车厢地板（主角脚底）高度
+    ctx.lineWidth = 2.5; ctx.strokeStyle = '#5b2a45';
+    for (const dx of [-17, 17]) { ctx.fillStyle = '#ffd77a'; ctx.beginPath(); ctx.arc(x + dx, y + 14, 6, 0, TAU); ctx.fill(); ctx.stroke(); }
+    ctx.fillStyle = '#ff5d8f'; rr(ctx, x - 30, y - (front ? 20 : 10), 60, front ? 30 : 22, [8, 8, 10, 10]); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#ffd77a'; rr(ctx, x - 30, y - (front ? 20 : 10), 60, 6, 3); ctx.fill();
+    drawStar(ctx, x, y - (front ? 4 : 1), 6);
+  }
+  function drawBalloonMob(cx, top, skin, t) {
+    const col = { pink: ['#ff9ec0', '#e2557f'], mint: ['#8ee6cb', '#2f9c7d'], gold: ['#ffd77a', '#c98a12'] }[skin] || ['#ff9ec0', '#e2557f'];
+    const cy = top + 22, sw = Math.sin(t * 3) * 3;
+    // 线
+    ctx.strokeStyle = '#8a5772'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(cx, cy + 25);
+    for (let k = 1; k <= 4; k++) ctx.quadraticCurveTo(cx + (k % 2 ? 6 : -6) + sw, cy + 25 + k * 6 - 3, cx + sw * 0.5, cy + 25 + k * 6);
+    ctx.stroke();
+    // 气球身体
+    const g = ctx.createRadialGradient(cx - 7, cy - 9, 3, cx, cy, 26);
+    g.addColorStop(0, '#fff'); g.addColorStop(0.25, col[0]); g.addColorStop(1, col[1]);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(cx, cy, 21, 24, 0, 0, TAU); ctx.fill();
+    ctx.strokeStyle = '#5b2a45'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = col[1]; ctx.beginPath(); ctx.moveTo(cx - 5, cy + 27); ctx.lineTo(cx + 5, cy + 27); ctx.lineTo(cx, cy + 22); ctx.closePath(); ctx.fill();
+    // 表情
+    ctx.fillStyle = '#3b1f2e';
+    for (const dx of [-7, 7]) { ctx.beginPath(); ctx.ellipse(cx + dx, cy - 2, 2.6, 3.4, 0, 0, TAU); ctx.fill(); }
+    ctx.fillStyle = '#fff'; for (const dx of [-6, 8]) { ctx.beginPath(); ctx.arc(cx + dx, cy - 3.5, 1, 0, TAU); ctx.fill(); }
+    ctx.strokeStyle = '#3b1f2e'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.arc(cx, cy + 5, 5, 0.2, Math.PI - 0.2); ctx.stroke();
+    ctx.fillStyle = 'rgba(255, 120, 150, 0.5)'; for (const dx of [-13, 13]) { ctx.beginPath(); ctx.ellipse(cx + dx, cy + 4, 4, 2.4, 0, 0, TAU); ctx.fill(); }
+  }
+  const BOSS_ART = {
+    king: ['king', 'king', 0.34], bear: ['bear', 'bear_jump', 0.36], rabbit: ['rabbit', 'rabbit_cast', 0.36], ringmaster: ['ringmaster', 'ringmaster_cast', 0.32],
+    cloudgiant: ['cloudgiant', 'cloudgiant', 0.3], windgod: ['windgod', 'windgod', 0.29], clown: ['clown', 'clown', 0.33], queen: ['queen', 'queen', 0.33],
+    knight: ['knight', 'knight_act', 0.3], demon: ['demon', 'demon_cast', 0.33],
+  };
+  // 贴地攻击外观：choco 冲击波 / star 魔法星星 / ball 杂技球
+  const waveArt = () => G.L.boss && (G.L.boss.waveArt || { rabbit: 'star', ringmaster: 'ball' }[G.L.boss.kind] || 'choco');
   function drawWaves(s) {
     for (const w of s.waves) {
-      if (G.L.boss && G.L.boss.kind === 'rabbit') {
+      if (waveArt() === 'ball') {
+        // 马戏团长丢出的彩色杂技球
+        const cx = w.x + w.w / 2, cy = w.y + w.h / 2, r = w.w * 0.62, a = G.time * -10;
+        ctx.fillStyle = '#ff6f9c'; ctx.beginPath(); ctx.arc(cx, cy, r, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#ffd54a'; ctx.beginPath(); ctx.arc(cx, cy, r, a, a + 2.1); ctx.lineTo(cx, cy); ctx.fill();
+        ctx.fillStyle = '#7ec8ff'; ctx.beginPath(); ctx.arc(cx, cy, r, a + 2.1, a + 4.2); ctx.lineTo(cx, cy); ctx.fill();
+        ctx.strokeStyle = '#5b2a45'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, r, 0, TAU); ctx.stroke();
+        continue;
+      }
+      if (waveArt() === 'star') {
         // 魔术兔放出的是贴地滚动的魔法星星
         ctx.fillStyle = 'rgba(255, 228, 120, 0.35)';
         ctx.beginPath(); ctx.arc(w.x + w.w / 2, w.y + w.h / 2, w.w * 0.75, 0, TAU); ctx.fill();
@@ -1899,12 +2593,12 @@
   function jumpCue(s) {
     const p = s.p, L = G.L;
     const fight = s.boss && s.boss.state !== 'idle' && s.boss.state !== 'gone';
-    if (!(fight || p.blocked) || !p.onGround) return null;
+    if (!(fight || p.blocked) || !p.onGround || s.flip) return null;
     let best = null;
     const consider = (o, v) => {
       const gap = o.x > p.x ? o.x - (p.x + p.w) : p.x - (o.x + o.w);
       if (gap < 0) return;
-      const disc = Math.sqrt(Math.max(0, CFG.jumpV ** 2 - 2 * CFG.gravity * o.h));
+      const disc = Math.sqrt(Math.max(0, CFG.jumpV ** 2 - 2 * CFG.gravity * (GY - o.y))); // 要跳到的高度 = 怪物顶面离地高度（飘浮的怪更高）
       const t1 = (CFG.jumpV - disc) / CFG.gravity, t2 = (CFG.jumpV + disc) / CFG.gravity;
       if (gap >= v * (t1 + 0.03) && gap <= v * (t2 - 0.05) && (!best || gap < best.gap)) best = { x: o.x + o.w / 2, y: o.y, gap };
     };
@@ -1981,9 +2675,17 @@
       if (pl.x + pl.w + Math.abs(pl.dx) < x0 || pl.x - Math.abs(pl.dx) > x1) return;
       if (pl.crumble) drawCrumble(pl, s ? s.crumble[i] : 0);
       else if (pl.mv) drawCarousel(platAt(pl, s ? s.t : G.time));
+      else if (pl.fake) drawFakePlat(pl, s && s.sk.scout);
       else drawMacaron(pl.x, pl.y, pl.w);
     });
     L.seqs.forEach((q, i) => drawSeq(q, s, i, x0, x1));
+    for (const w of L.winds) if (w.x1 > x0 && w.x0 < x1) drawWind(w, t);
+    for (const fx of L.flips) if (fx > x0 - 40 && fx < x1 + 40) drawMirrorGate(fx, t);
+    L.rails.forEach((r, i) => {
+      if (r.x1 < x0 || r.x0 > x1) return;
+      drawRail(r, x0, x1);
+      if (!s || (!s.cartRode[i] && s.cart !== i)) { const cx = r.x0 + 26, ry = railY(r, cx); if (ry !== null) drawCart(cx, ry - CART_FLOOR); }
+    });
     L.bubbles.forEach((bb, i) => {
       if (bb.x < x0 - 40 || bb.x > x1 + 40) return;
       const cd = s ? s.bubCD[i] : 0;
@@ -1999,6 +2701,18 @@
     for (const e of ens) {
       if ((s && !e.alive) || e.x + e.w < x0 || e.x > x1) continue;
       const sq = 1 + Math.sin(t * 6 + e.x * 0.05) * 0.05;
+      if (e.spike) { drawSpike(e.x + e.w / 2, e.y + e.h / 2, e.w / 2, t); continue; }
+      if (e.type === 'bird') { sprite(e.skin || 'bird', e.x + e.w / 2, e.y + e.h + 6, 0.2, { sy: 1 + Math.sin(t * 16 + e.x) * 0.08 }); continue; }
+      if (e.type === 'ghost') {
+        const on = !s || ghostOn(e, s.t);
+        sprite(e.skin || 'ghost', e.x + e.w / 2, e.y + e.h + 4, 0.25, { alpha: on ? 1 : 0.18, sy: e.hang ? -1 : 1 });
+        continue;
+      }
+      if (e.hang) {
+        // 倒挂在天花板上：以顶面为锚点上下翻转绘制
+        sprite(e.skin || e.type, e.x + e.w / 2, e.y - 3, e.type === 'jelly' ? 0.29 : 0.27, { sx: 2 - sq, sy: -sq });
+        continue;
+      }
       ctx.fillStyle = 'rgba(90, 40, 30, 0.18)';
       ctx.beginPath(); ctx.ellipse(e.x + e.w / 2, e.y + e.h, e.w * 0.55, 4, 0, 0, Math.PI * 2); ctx.fill();
       if (e.seal >= 0) {
@@ -2006,7 +2720,9 @@
         ctx.beginPath(); ctx.ellipse(e.x + e.w / 2, e.y + e.h / 2, 36, 28, 0, 0, Math.PI * 2); ctx.fill();
       }
       const fly = e.type === 'fly', fsq = fly ? 1 + Math.sin(t * 18 + e.x) * 0.06 : sq;
-      if (e.type === 'hopper') {
+      if (e.type === 'balloon') {
+        drawBalloonMob(e.x + e.w / 2, e.y, e.skin, t + e.x * 0.01);
+      } else if (e.type === 'hopper') {
         const up = e.y < e.y0 - 4;
         sprite(up ? 'hopper_jump' : 'hopper', e.x + e.w / 2, e.y + e.h + 3, 0.235, { flip: e.vx > 0, sx: up ? 0.92 : 2 - sq, sy: up ? 1.08 : sq });
       } else {
@@ -2046,12 +2762,15 @@
     }
     // 主角
     const key = playerSprite(s);
-    if (p.onGround && G.mode !== 'dying') {
+    if (p.onGround && G.mode !== 'dying' && !s.flip) {
       ctx.fillStyle = 'rgba(90, 40, 30, 0.22)';
       ctx.beginPath(); ctx.ellipse(p.x + p.w / 2, p.y + p.h, 17, 4.5, 0, 0, Math.PI * 2); ctx.fill();
     }
     const flicker = p.inv > 0 && Math.floor(G.time * 18) % 2 ? 0.35 : 1;
-    sprite(key, p.x + p.w / 2, p.y + p.h + 3 + G.dieY, 0.42, { sx: G.sqx, sy: G.sqy, alpha: flicker });
+    // 重力翻转时以头顶为"脚底"倒过来画
+    if (s.flip) sprite(key, p.x + p.w / 2, p.y - 3, 0.42, { sx: G.sqx, sy: -G.sqy, alpha: flicker });
+    else sprite(key, p.x + p.w / 2, p.y + p.h + 3 + G.dieY, 0.42, { sx: G.sqx, sy: G.sqy, alpha: flicker });
+    if (s.cart >= 0) drawCart(p.x + p.w / 2, p.y + p.h, true);
     if (s.bub >= 0) drawBubble(p.x + p.w / 2, p.y + p.h / 2 - 6, 46 + Math.sin(t * 8) * 2, 1);
     if (s.shield) {
       // 猫咪的泡泡护盾
@@ -2103,8 +2822,9 @@
       ctx.fillStyle = 'rgba(255, 248, 240, 0.94)'; rr(ctx, bx, by, bw, 36, 18); ctx.fill();
       ctx.strokeStyle = '#ffc2d6'; ctx.lineWidth = 3; ctx.stroke();
       text(ctx, L.boss.name, bx + 18, by + 19, 17, { align: 'left', fill: '#5b2a45', sw: 0 });
-      for (let k = 0; k < 3; k++) {
-        const cx = bx + 152 + k * 32, on = k < b.hp;
+      const maxHp = L.boss.hp || 3;
+      for (let k = 0; k < maxHp; k++) {
+        const cx = bx + 152 + k * (maxHp > 3 ? 24 : 32), on = k < b.hp;
         ctx.fillStyle = on ? '#ffc23a' : '#eadbe2';
         rr(ctx, cx - 11, by + 9, 22, 18, [10, 10, 4, 4]); ctx.fill();
         ctx.strokeStyle = on ? '#b06d36' : '#d8bcc8'; ctx.lineWidth = 2; ctx.stroke();
@@ -2170,7 +2890,7 @@
     // 已掌握的猫咪本领：亮起 = 当前可用
     const owned = CAT_SKILLS.filter((k) => s.sk[k.id]);
     owned.forEach((k, i) => {
-      const on = k.id === 'shield' ? s.shield : k.id === 'rescue' ? !s.rescued : s.comboT > 0;
+      const on = { shield: s.shield, rescue: !s.rescued, magnet: s.comboT > 0, lift: !s.lifted, scout: true }[k.id];
       const px = x0 + i * 62, py = y0 + 54;
       ctx.fillStyle = on ? 'rgba(199, 179, 255, 0.95)' : 'rgba(255, 248, 240, 0.8)';
       rr(ctx, px, py, 56, 22, 11); ctx.fill();
@@ -2180,7 +2900,7 @@
     });
     let hint = null;
     const fight = s.boss && s.boss.state !== 'idle';
-    if (fight) hint = s.boss.phase === 1 && s.boss.state !== 'gone' ? ({ bear: '冲击波要跳过去，它冲过来时踩它头！', rabbit: '魔法星星要跳过去，它走过来时踩它头！' }[L.boss.kind] || '站稳！等布丁王走近，听猫咪喊“现在跳！”') : null;
+    if (fight) hint = s.boss.phase === 1 && s.boss.state !== 'gone' ? ({ bear: '冲击波要跳过去，它冲过来时踩它头！', rabbit: '魔法星星要跳过去，它走过来时踩它头！', ringmaster: '团长飘在天上：踩气球弹上去，落在他头上！' }[L.boss.kind] || '站稳！等布丁王走近，听猫咪喊“现在跳！”') : null;
     else for (const [a, b, str] of L.hints) if (p.x >= a && p.x <= b) hint = str;
     if (G.mode === 'play' && G.s.easy && p.x < 1200 && !hint) hint = '落下时踩在怪物头上会弹起来';
     if (hint) {
@@ -2230,6 +2950,12 @@
         burst(G.fxS, m.x, m.y - 30, 10, { kind: 'heart', speed: 160, size: 7, colors: ['#ff9ec0', '#fff'], life: 0.8, g: -60 });
       }
     });
+    // 月光游乐园：清场时放烟花（能量越高越热闹）
+    if (G.L.theme === 'moon' && c.t > 0.5 && c.t < 3.0 && Math.random() < 0.05 * c.tier) {
+      const pal = [['#ffd54a', '#fff6c8'], ['#ff9ec0', '#fff'], ['#7ec8ff', '#e5f4ff'], ['#c7b3ff', '#fff']][Math.floor(Math.random() * 4)];
+      burst(G.fxS, 80 + Math.random() * (W - 160), 70 + Math.random() * 160, 26, { kind: 'dot', speed: 240, size: 3.5, colors: pal, life: 1.0, g: 90 });
+      Snd.sfx('pop2');
+    }
     if (c.tier === 3 && c.t > 0.6 && c.t < 2.8) {
       for (let k = 0; k < 3; k++) {
         G.fxS.push({ x: Math.random() * W, y: -20, vx: (Math.random() - 0.5) * 40, vy: 160 + Math.random() * 160, g: 60, life: 2.6, max: 2.6,
@@ -2280,7 +3006,7 @@
       const k = Math.min(1, Math.max(0, (t - m.appear) / 0.25));
       if (k <= 0) continue;
       const bounce = k < 1 ? 1 + Math.sin(k * Math.PI) * 0.3 : 1 + Math.sin(t * 8 + m.x) * 0.04;
-      const msc = { king: 0.42, bear: 0.38, rabbit: 0.38, fly: 0.26, hopper: 0.25 }[m.type] || 0.29;
+      const msc = { king: 0.42, bear: 0.38, rabbit: 0.38, ringmaster: 0.34, cloudgiant: 0.32, windgod: 0.3, clown: 0.34, queen: 0.34, knight: 0.3, demon: 0.34, fly: 0.26, hopper: 0.25 }[m.type] || 0.29;
       sprite(m.type, m.x, m.y + 4 - (m.type === 'fly' ? 30 : 0), msc, { sx: k * (2 - bounce), sy: k * bounce, flip: false });
     }
     drawFx(G.fxS);
@@ -2296,7 +3022,7 @@
   }
 
   // ===== 界面切换 =====
-  const screens = ['scrTitle', 'scrSelect', 'scrPause', 'scrFail', 'scrResult'].map((id) => $('#' + id));
+  const screens = ['scrTitle', 'scrSelect', 'scrPause', 'scrFail', 'scrResult', 'scrEnding'].map((id) => $('#' + id));
   const btnPause = $('#btnPause');
   function show(id) { for (const el of screens) el.hidden = el.id !== id; }
 
@@ -2336,7 +3062,7 @@
     G.mode = 'title';
     btnPause.hidden = true;
     // 默认显示最新解锁关卡所在的章节
-    selCh = save.unlocked > CHAPTERS[1][0] ? 1 : 0;
+    selCh = Math.max(0, CHAPTERS.findIndex(([a, b]) => save.unlocked - 1 >= a && save.unlocked - 1 < b));
     renderCards();
     show('scrSelect');
   }
@@ -2363,6 +3089,7 @@
       pit: ['掉进坑里了', '在坑边点一下起跳；距离不够时，在空中再点一下二段跳。'],
       enemy: ['被怪物撞到了', '从上方落下、踩在怪物头上就能打倒它；从侧面碰到会受伤。'],
       boss: [`被${G.L.boss ? G.L.boss.name : '首领'}撞到了`, '别急着跳：等它走近、猫咪喊“现在跳！”时再起跳，就能落在它头上。'],
+      spike: ['碰到了星刺球', '星刺球浑身是刺，不能踩，只能跳过去或者绕开。'],
       wave: ['被贴地攻击撞到了', `${G.L.boss ? G.L.boss.name : '首领'}会放出贴地滚来的攻击：等它靠近、猫咪喊“现在跳！”时跳过去。`],
     };
     const [title, tip] = FAIL[s.cause] || FAIL.enemy;
@@ -2406,17 +3133,17 @@
     bs.forEach((el) => el.classList.remove('on'));
     bs.forEach((el, k) => { if (k < stars) setTimeout(() => { el.classList.add('on'); Snd.sfx('count', 1); }, 250 + k * 280); });
     const last = i >= LEVELS.length - 1;
-    $('#btnNext').textContent = last ? '回到选关' : '下一关';
+    $('#btnNext').textContent = last ? '观看结局' : '下一关';
     show('scrResult');
     setTimeout(() => $('#btnNext').focus({ preventScroll: true }), 50);
   }
 
-  const CHAPTERS = [[0, 10], [10, 15]];
+  const CHAPTERS = [[0, 10], [10, 20], [20, 30], [30, 40], [40, 50]];
   let selCh = 0;
   function renderCards() {
     const box = $('#levelCards');
     box.innerHTML = '';
-    ['#tabCh1', '#tabCh2'].forEach((id, c) => { const t = $(id); t.classList.toggle('on', c === selCh); t.setAttribute('aria-selected', c === selCh); });
+    ['#tabCh1', '#tabCh2', '#tabCh3', '#tabCh4', '#tabCh5'].forEach((id, c) => { const t = $(id); t.classList.toggle('on', c === selCh); t.setAttribute('aria-selected', c === selCh); });
     const [from, to] = CHAPTERS[selCh];
     LEVELS.slice(from, to).forEach((L, j) => {
       const i = from + j;
@@ -2469,8 +3196,7 @@
   });
   $('#btnSelect').addEventListener('click', () => { Snd.init(); Snd.sfx('click'); goSelect(); });
   $('#btnBack').addEventListener('click', () => { Snd.sfx('click'); goTitle(); });
-  $('#tabCh1').addEventListener('click', () => { Snd.sfx('click'); selCh = 0; renderCards(); });
-  $('#tabCh2').addEventListener('click', () => { Snd.sfx('click'); selCh = 1; renderCards(); });
+  ['#tabCh1', '#tabCh2', '#tabCh3', '#tabCh4', '#tabCh5'].forEach((id, c) => $(id).addEventListener('click', () => { Snd.sfx('click'); selCh = c; renderCards(); }));
   $('#btnUnlock').addEventListener('click', () => { save.unlocked = LEVELS.length; persist(); renderCards(); });
   $('#btnResume').addEventListener('click', () => { Snd.sfx('click'); resumeGame(); });
   $('#btnRestart').addEventListener('click', () => { Snd.sfx('click'); startLevel(G.idx); });
@@ -2481,8 +3207,30 @@
   $('#btnResMenu').addEventListener('click', () => { Snd.sfx('click'); goSelect(); });
   $('#btnNext').addEventListener('click', () => {
     Snd.sfx('click');
-    if (G.idx >= LEVELS.length - 1) goSelect(); else startLevel(G.idx + 1);
+    if (G.idx >= LEVELS.length - 1) showEnding(); else startLevel(G.idx + 1);
   });
+  // 开放结局：两种选择各一段尾声
+  const ENDINGS = {
+    fix: ['修复的愿望', '你和猫咪把碎片一片片拼回宝石。愿望机器重新运转，这一次它只收集真正的心愿。糖果森林的果冻怪们变回了小小的愿望，绕着你们转圈，像在说谢谢。'],
+    brk: ['自由的愿望', '你松开手，让碎片飞向夜空。没有了机器，愿望不再被谁保管，而是落回每个人心里，需要自己去守护。猫咪眯起眼睛："这样也挺好喵，我们以后再一起冒险吧。"'],
+  };
+  const END_INTRO = $('#endText').innerHTML;
+  function showEnding() {
+    G.mode = 'title';
+    $('#endTitle').textContent = '愿望碎片';
+    $('#endText').innerHTML = END_INTRO;
+    $('#endChoices').hidden = false; $('#endBack').hidden = true;
+    show('scrEnding');
+  }
+  function chooseEnding(k) {
+    Snd.sfx('win');
+    $('#endTitle').textContent = ENDINGS[k][0];
+    $('#endText').textContent = ENDINGS[k][1];
+    $('#endChoices').hidden = true; $('#endBack').hidden = false;
+  }
+  $('#btnEndFix').addEventListener('click', () => chooseEnding('fix'));
+  $('#btnEndBreak').addEventListener('click', () => chooseEnding('brk'));
+  $('#btnEndHome').addEventListener('click', () => { Snd.sfx('click'); goTitle(); });
   const toggleSound = () => { Snd.init(); Snd.setMuted(!save.muted); syncSoundLabels(); Snd.sfx('click'); };
   $('#btnSound').addEventListener('click', toggleSound);
   $('#btnPauseSound').addEventListener('click', toggleSound);
@@ -2566,7 +3314,7 @@
       if (G.cat.moodT <= 0) G.cat.mood = 'idle';
       G.cat.bubbleT -= dt;
       if (s && G.mode !== 'title') {
-        const tx = s.p.x - 38, ty = s.p.y - 16 + Math.sin(G.time * 3) * 5;
+        const tx = s.p.x - 38, ty = (s.flip ? s.p.y + s.p.h + 70 : s.p.y - 16) + Math.sin(G.time * 3) * 5;
         G.cat.x += (tx - G.cat.x) * Math.min(1, dt * 6);
         G.cat.y += (ty - G.cat.y) * Math.min(1, dt * 6);
       }
@@ -2624,13 +3372,23 @@
   // ===== 自动求解：验证每关可通（调试用，不影响正常游玩） =====
   function solve(idx, opt = {}) {
     const L = LEVELS[idx];
+    // opt.from / opt.to：只验证 [from, to) 这一段（从该段起点的平地出发，之前的机关视为已完成）
     const root = newRun(L, false);
     root.ev = null;
+    if (opt.from != null) {
+      const sx = Math.max(10, opt.from - 20); // 站在上一段末尾的平地上出发（有的分段一开始就是坑）
+      const g = L.solids.find((b) => !b.ceil && b.x <= sx && b.x + b.w > sx);
+      root.p.x = sx; root.p.y = g.y - root.p.h;
+      root.en.forEach((e) => { if (e.x < opt.from) e.alive = false; });
+      L.seqs.forEach((q, i) => { if (q.gate.x < opt.from) root.seqDone[i] = 1; });
+      L.doors.forEach((dd, i) => { if (dd.x < opt.from) root.doorDone[i] = 1; });
+      L.seals.forEach((sl, i) => { if (sl.x < opt.from) root.seals[i] = 1; });
+    }
     const D = 6, H = 160, LIMIT = opt.limit || 300000;
     const goalN = (name) => (L.goals.find((g) => g[0] === name) || [])[1] || 0;
-    const hasFly = L.enemies.some((e) => e.type === 'fly' || e.type === 'hopper') || L.plats.some((pl) => pl.mv);
+    const hasFly = L.enemies.some((e) => ['fly', 'hopper', 'balloon', 'bird', 'ghost'].includes(e.type) || e.amp) || L.plats.some((pl) => pl.mv);
     const needCombo = opt.combo ? goalN('combo') : 0, needStars = opt.stars ? goalN('stars') : 0;
-    const ok = (s) => s.finished && s.maxCombo >= needCombo && s.stars >= needStars;
+    const ok = (s) => (opt.to != null ? s.p.x >= opt.to && !s.flip : s.finished) && s.maxCombo >= needCombo && s.stars >= needStars;
     const bad = (s) => s.dead || s.hurts > 0 || s.doorFails > 0 || s.seqFails > 0 || (s.finished && !ok(s));
     const key = (s) => {
       const p = s.p;
@@ -2638,7 +3396,7 @@
       for (const e of s.en) k += e.alive ? '1' : '0';
       k += `|${s.seals.join('')}${s.doorDone.join('')}|${Array.from(s.crumble, (v) => (v ? Math.ceil(v * 5) : 0)).join('')}`;
       for (const w of s.waves) k += `,w${Math.round(w.x / 4)}`;
-      k += `|${s.ride},${s.bub},${Math.round(s.bubT * 10)},${Array.from(s.bubCD, (v) => (v ? Math.ceil(v * 2) : 0)).join('')},${s.seqLit.join('')}${s.seqDone.join('')}`;
+      k += `|${s.flip ? 1 : 0}${s.lifted ? 1 : 0},${s.cart},${s.ride},${s.bub},${Math.round(s.bubT * 10)},${Array.from(s.bubCD, (v) => (v ? Math.ceil(v * 2) : 0)).join('')},${s.seqLit.join('')}${s.seqDone.join('')}`;
       if (hasFly) k += `,t${Math.round(s.t * 10)}`; // 飞飞怪、跳跳小丑、移动平台的位置只由时间决定
       if (s.boss) {
         const b = s.boss;
@@ -2681,7 +3439,7 @@
     }
     const taps = dfs(root, []);
     let result = null;
-    if (taps) {
+    if (taps && opt.from == null) {
       const s = newRun(L, false);
       s.ev = null;
       const q = taps.slice();
@@ -2699,7 +3457,7 @@
     const t0 = performance.now();
     for (let t = 0; t < sec; t += 1 / 60) update(1 / 60);
     const t1 = performance.now();
-    render();
+    if (scale > 0) render();
     G.prof = { update: t1 - t0, render: performance.now() - t1 };
     return G.mode;
   }
